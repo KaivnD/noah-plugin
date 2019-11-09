@@ -1,4 +1,4 @@
-﻿namespace NoahPlugin
+﻿namespace Noah
 {
     ///<summary>
     /// <para>Every RhinoCommon .rhp assembly must have one and only one PlugIn-derived
@@ -8,16 +8,16 @@
     /// attributes in AssemblyInfo.cs (you might need to click "Project" ->
     /// "Show All Files" to see it in the "Solution Explorer" window).</para>
     ///</summary>
-    public class NoahPluginPlugIn : Rhino.PlugIns.PlugIn
+    public class Noah : Rhino.PlugIns.PlugIn
 
     {
-        public NoahPluginPlugIn()
+        public Noah()
         {
             Instance = this;
         }
 
-        ///<summary>Gets the only instance of the NoahPluginPlugIn plug-in.</summary>
-        public static NoahPluginPlugIn Instance
+        ///<summary>Gets the only instance of the Noah plug-in.</summary>
+        public static Noah Instance
         {
             get; private set;
         }

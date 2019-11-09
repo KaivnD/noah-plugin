@@ -16,19 +16,19 @@ using Rhino.PlugIns;
 
 // Icons should be Windows .ico files and contain 32-bit images in the following sizes: 16, 24, 32, 48, and 256.
 // This is a Rhino 6-only description.
-[assembly: PlugInDescription(DescriptionType.Icon, "NoahPlugin.EmbeddedResources.plugin-utility.ico")]
+[assembly: PlugInDescription(DescriptionType.Icon, "RH_Plugin.EmbeddedResources.plugin-utility.ico")]
 
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("NoahPlugin")]
+[assembly: AssemblyTitle("RH_Plugin")]
 
 // This will be used also for the plug-in description.
-[assembly: AssemblyDescription("NoahPlugin utility plug-in")]
+[assembly: AssemblyDescription("RH_Plugin utility plug-in")]
 
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("NoahPlugin")]
+[assembly: AssemblyProduct("RH_Plugin")]
 [assembly: AssemblyCopyright("Copyright ©  2019")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
@@ -39,7 +39,7 @@ using Rhino.PlugIns;
 [assembly: ComVisible(false)]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("252575c4-fe96-43ab-ad30-54073c9e1523")] // This will also be the Guid of the Rhino plug-in
+[assembly: Guid("fed6db7d-32dc-49e2-96fb-9deb7a71917b")] // This will also be the Guid of the Rhino plug-in
 
 // Version information for an assembly consists of the following four values:
 //

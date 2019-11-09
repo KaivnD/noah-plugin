@@ -63,11 +63,12 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Load3dm.cs" />
-    <Compile Include="NoahCommand.cs" />
     <Compile Include="Noah.cs" />
+    <Compile Include="NoahClient.cs" />
     <Compile Include="NoahWatcher.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RunGhFile.cs" />
+    <Compile Include="NoahTask.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="EmbeddedResources\plugin-utility.ico" />

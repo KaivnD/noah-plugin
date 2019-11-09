@@ -5,6 +5,9 @@ using Grasshopper.GUI.Canvas;
 using Grasshopper.Kernel;
 using Rhino;
 using Rhino.Commands;
+using Rhino.DocObjects;
+using Rhino.Input;
+using Rhino.Input.Custom;
 using WebSocketSharp;
 
 namespace Noah
@@ -12,6 +15,7 @@ namespace Noah
     public class NoahWatcher : Command
     {
         static NoahWatcher _instance;
+        internal NoahClient Client = null;
         public NoahWatcher()
         {
             _instance = this;
@@ -30,25 +34,50 @@ namespace Noah
 
         protected override Result RunCommand(RhinoDoc doc, RunMode mode)
         {
-            //RhinoApp.WriteLine("Initiating Noah data server!");
-            //var ws = new WebSocket("ws://localhost:9410");
+            GetOption opts = new GetOption();
+            opts.SetCommandPrompt("Select action you want: ");
+            opts.AddOption("Start");
+            opts.AddOption("Stop");
+            GetResult getResult = opts.Get();
+            if (getResult == GetResult.Option)
+            {
+                string whereToGo = opts.Option().EnglishName;
+                switch(whereToGo)
+                {
+                    case "Start":
+                        {
+                            if (Client == null)
+                            {
+                                Client = new NoahClient(9410);
+                                Client.MessageEvent += Client_MessageEvent;
+                                Client.ErrorEvent += Client_ErrorEvent;
+                            }
 
-            //ws.OnMessage += (sender, e) =>
-            //        RhinoApp.WriteLine("Noah: " + e.Data);
+                            Client.Connect();
+                            break;
+                        }
+                    case "Stop":
+                        {
+                            if (Client != null) Client.Close();
+                            break;
+                        }
+                    default:
+                        break;
+                }
+                RhinoApp.WriteLine();
+            }
 
-            //ws.OnError += (sender, e) =>
-            //    RhinoApp.WriteLine("Error: " + e.Message);
-
-            //ws.OnOpen += (sender, e) =>
-            //    RhinoApp.WriteLine("Noah data server is open ");
-
-            //ws.OnClose += (sender, e) =>
-            //     RhinoApp.WriteLine("Noah data server is close ");
-
-            //ws.Connect();
-
-            //ws.Send("This is Noah Watcher");
             return Result.Nothing;
+        }
+
+        private void Client_ErrorEvent(object sender, string message)
+        {
+            RhinoApp.WriteLine("Error: " + message);
+        }
+
+        private void Client_MessageEvent(object sender, string message)
+        {
+            RhinoApp.WriteLine(message);
         }
 
         private void SetParam(string name)

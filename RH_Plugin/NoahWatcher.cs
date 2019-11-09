@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Grasshopper;
 using Grasshopper.GUI.Canvas;
 using Grasshopper.Kernel;
+using Grasshopper.Plugin;
 using Rhino;
 using Rhino.Commands;
 using Rhino.DocObjects;
@@ -34,6 +35,21 @@ namespace Noah
 
         protected override Result RunCommand(RhinoDoc doc, RunMode mode)
         {
+            var Grasshopper = RhinoApp.GetPlugInObject("Grasshopper") as GH_RhinoScriptInterface;
+
+            if (Grasshopper == null)
+            {
+                return Result.Cancel;
+            }
+
+            Grasshopper.DisableBanner();
+            Grasshopper.ShowEditor();
+
+            //if (!Grasshopper.IsEditorLoaded())
+            //{
+            //    Grasshopper.LoadEditor();
+            //}
+
             GetOption opts = new GetOption();
             opts.SetCommandPrompt("Select action you want: ");
             opts.AddOption("Start");

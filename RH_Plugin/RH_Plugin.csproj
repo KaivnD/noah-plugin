@@ -67,7 +67,6 @@
     <Compile Include="NoahClient.cs" />
     <Compile Include="NoahWatcher.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="RunGhFile.cs" />
     <Compile Include="NoahTask.cs" />
   </ItemGroup>
   <ItemGroup>

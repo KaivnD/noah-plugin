@@ -36,7 +36,7 @@ namespace Noah
 
         private void Init()
         {
-            Client = new WebSocket("ws://localhost:9410/data/center");
+            Client = new WebSocket("ws://localhost:9410/data/server");
 
             Client.OnMessage += Socket_OnMessage;
             Client.OnError += Socket_OnError;

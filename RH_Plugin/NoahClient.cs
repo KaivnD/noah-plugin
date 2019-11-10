@@ -11,6 +11,7 @@ namespace Noah
     public class NoahClient
     {
         internal int Port;
+        internal Guid Guid;
         private WebSocket Client;
         private List<NoahTask> TaskList = new List<NoahTask>();
 
@@ -21,6 +22,7 @@ namespace Noah
         public NoahClient(int port)
         {
             Port = port;
+            Guid = Guid.NewGuid();
             Init();
         }
 
@@ -39,7 +41,7 @@ namespace Noah
         private void Init()
         {
             // TODO 每个Rhino客户端需要ID和platform=Rhino, 考虑使用url params
-            Client = new WebSocket("ws://localhost:9410/data/server");
+            Client = new WebSocket("ws://localhost:9410/data/server/?platform=Rhino&ID=" + Guid.ToString());
 
             Client.OnMessage += Socket_OnMessage;
             Client.OnError += Socket_OnError;

@@ -1,4 +1,5 @@
 ﻿using Grasshopper;
+using Grasshopper.GUI.Canvas;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Special;
@@ -47,13 +48,46 @@ namespace Noah
                 ErrorEvent(this, "Work file is not exist!");
                 return;
             }
+            GH_DocumentIO io = new GH_DocumentIO();
+            io.Open(file);
 
-            Commands.Run_GrasshopperOpen(file);
+            GH_Document doc = GH_Document.DuplicateDocument(io.Document);
+
+            if (doc == null)
+            {
+                ErrorEvent(this, "Cannot read this file!");
+                return;
+            }
+
+            GH_DocumentServer server = Instances.DocumentServer;
+
+            if (server == null)
+            {
+                ErrorEvent(this, "No Document Server exist!");
+                return;
+            }
+
+            server.AddDocument(doc);
+
+            doc.Properties.ProjectFileName = "测试名称";
+
+            GH_Canvas activeCanvas = Instances.ActiveCanvas;
+            if (activeCanvas == null)
+            {
+                ErrorEvent(this, "No Active Canvas exist!");
+                return;
+            }
+
+            SetInput(doc);
+
+            activeCanvas.Document = doc;
+            activeCanvas.Document.IsModified = false;
+            activeCanvas.Refresh();
+            doc.NewSolution(false);
         }
 
-        private void SetInput()
+        private void SetInput(GH_Document doc)
         {
-            GH_Document doc = Instances.ActiveCanvas.Document;
             GH_ClusterInputHook[] hooks = doc.ClusterInputHooks();
             GH_Structure<IGH_Goo> data = new GH_Structure<IGH_Goo>();
             GH_Path path = new GH_Path(0);

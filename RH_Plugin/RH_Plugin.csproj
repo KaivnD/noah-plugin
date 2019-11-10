@@ -65,7 +65,7 @@
     <Compile Include="Load3dm.cs" />
     <Compile Include="Noah.cs" />
     <Compile Include="NoahClient.cs" />
-    <Compile Include="NoahWatcher.cs" />
+    <Compile Include="NoahServer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="NoahTask.cs" />
   </ItemGroup>

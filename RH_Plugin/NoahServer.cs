@@ -13,24 +13,24 @@ using WebSocketSharp;
 
 namespace Noah
 {
-    public class NoahWatcher : Command
+    public class NoahServer : Command
     {
-        static NoahWatcher _instance;
+        static NoahServer _instance;
         internal NoahClient Client = null;
-        public NoahWatcher()
+        public NoahServer()
         {
             _instance = this;
         }
 
         ///<summary>The only instance of the NoahWatcher command.</summary>
-        public static NoahWatcher Instance
+        public static NoahServer Instance
         {
             get { return _instance; }
         }
 
         public override string EnglishName
         {
-            get { return "NoahWatcher"; }
+            get { return "NoahServer"; }
         }
 
         protected override Result RunCommand(RhinoDoc doc, RunMode mode)

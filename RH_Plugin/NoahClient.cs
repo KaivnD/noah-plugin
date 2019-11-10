@@ -12,6 +12,7 @@ namespace Noah
     {
         internal int Port;
         private WebSocket Client;
+        private List<NoahTask> TaskList = new List<NoahTask>();
 
         public delegate void EchoHandler(object sender, string message);
         public event EchoHandler MessageEvent;
@@ -24,9 +25,10 @@ namespace Noah
         }
 
         public void Connect()
-        {
+        { 
             Client.Connect();
-            Client.Send("This is Rhino");
+
+            Client.Send("{\"route\": \"none\", \"msg\": \"This is Rhino\"}");
         }
 
         public void Close()
@@ -36,6 +38,7 @@ namespace Noah
 
         private void Init()
         {
+            // TODO 每个Rhino客户端需要ID和platform=Rhino, 考虑使用url params
             Client = new WebSocket("ws://localhost:9410/data/server");
 
             Client.OnMessage += Socket_OnMessage;
@@ -46,7 +49,8 @@ namespace Noah
 
         private void Socket_OnClose(object sender, CloseEventArgs e)
         {
-            MessageEvent(this, "Noah Client is down");
+            // TODO 断线重联
+            MessageEvent(this, "Noah Client connecting is broken");
         }
 
         private void Socket_OnOpen(object sender, EventArgs e)
@@ -65,9 +69,24 @@ namespace Noah
                 ClientEventArgs eve = JsonConvert.DeserializeObject<ClientEventArgs>(e.Data);
                 switch (eve.route)
                 {
-                    case "task":
+                    case ClientEventType.task:
                         {
                             NoahTask task = JsonConvert.DeserializeObject<NoahTask>(eve.data);
+
+                            NoahTask _task = (from t in TaskList
+                                        where Equals(t.ID, task.ID)
+                                        select t).FirstOrDefault();
+
+                            if (_task != null)
+                            {
+                                ErrorEvent(this, "This task is already running!");
+                                _task.BringToFront();
+                                break;
+                            }
+
+                            TaskList.Add(task);
+
+                            MessageEvent(this, task.ID + " is loaded!");
 
                             task.ErrorEvent += (sd, msg) =>
                             {
@@ -78,14 +97,27 @@ namespace Noah
 
                             break;
                         }
-                    case "message":
+                    case ClientEventType.message:
                         {
                             MessageEvent(this, eve.data);
                             break;
                         }
-                    case "data":
+                    case ClientEventType.data:
                         {
-                            MessageEvent(this, eve.data);
+                            TaskData taskData = JsonConvert.DeserializeObject<TaskData>(eve.data);
+
+                            NoahTask task = (from t in TaskList
+                                              where Equals(t.ID, taskData.ID)
+                                              select t).FirstOrDefault();
+
+                            if (task == null)
+                            {
+                                ErrorEvent(this, "This task is not running!");
+                                break;
+                            }
+
+                            task.SetData(taskData);
+
                             break;
                         }
                     default:
@@ -101,7 +133,14 @@ namespace Noah
 
     public class ClientEventArgs
     {
-        public string route;
+        public ClientEventType route;
         public string data;
+    }
+
+    public enum ClientEventType
+    {
+        message,
+        task,
+        data
     }
 }

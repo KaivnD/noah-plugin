@@ -18,6 +18,11 @@ namespace Noah.Commands
     {
         static NoahServer _instance;
         internal NoahClient Client = null;
+
+        private int Port = 0;
+
+        private bool ShowEditor = false;
+
         public NoahServer()
         {
             _instance = this;
@@ -50,42 +55,64 @@ namespace Noah.Commands
                 Grasshopper.LoadEditor();
             }
 
-            // TODO 增加选项，让Noah客户端决定是否开启GH的ui
-            bool show = false;
-            if (show) Grasshopper.ShowEditor();
-
-            GetOption opts = new GetOption();
-            opts.SetCommandPrompt("What are you going to do? ");
-            opts.AddOption("Connect");
-            opts.AddOption("Stop");
-            GetResult getResult = opts.Get();
-            if (getResult == GetResult.Option)
+            GetOption go = null;
+            while (true)
             {
-                string whereToGo = opts.Option().EnglishName;
-                switch(whereToGo)
-                {
-                    case "Connect":
-                        {
-                            if (Client == null)
-                            {
-                                // TODO 端口应从客户端传过来
-                                int port = 9410;
-                                Client = new NoahClient(port);
-                                Client.MessageEvent += Client_MessageEvent;
-                                Client.ErrorEvent += Client_ErrorEvent;
-                            }
+                var port = new OptionInteger(0, 1024, 65535);
+                var toggle = new OptionToggle(ShowEditor, "Hide", "Show");
 
-                            Client.Connect();
-                            break;
-                        }
-                    case "Stop":
-                        {
-                            if (Client != null) Client.Close();
-                            break;
-                        }
-                    default:
-                        break;
+                go = new GetOption();
+
+                go.SetCommandPrompt("Noah Server");
+                go.AddOption("Connect");
+                go.AddOption("Stop");
+                go.AddOptionInteger("Port", ref port);
+                go.AddOptionToggle("Editor", ref toggle);
+
+                GetResult result = go.Get();
+                if (result != GetResult.Option) break;
+
+                ShowEditor = toggle.CurrentValue;
+
+                string whereToGo = go.Option().EnglishName;
+
+                if (whereToGo == "Connect")
+                {
+                    if (Port == 0)
+                    {
+                        RhinoApp.WriteLine("Please set Port you want to connect!");
+                        continue;
+                    }
+
+                    if (Client == null)
+                    {
+                        Client = new NoahClient(Port);
+                        Client.MessageEvent += Client_MessageEvent;
+                        Client.ErrorEvent += Client_ErrorEvent;
+                    }
+
+                    Client.Connect();
+
+                    if (ShowEditor) Grasshopper.ShowEditor();
+
+                    break;
                 }
+
+                if (whereToGo == "Stop")
+                {
+                    if (Port == 0) continue;
+
+                    if (Client != null) Client.Close();
+                    break;
+                }
+
+                if (whereToGo == "Port")
+                {
+                    Port = port.CurrentValue;
+                    RhinoApp.WriteLine("Port is set to " + Port.ToString());
+                    continue;
+                }
+
             }
 
             return Result.Nothing;

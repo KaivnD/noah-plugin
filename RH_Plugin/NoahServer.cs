@@ -54,7 +54,7 @@ namespace Noah
             if (show) Grasshopper.ShowEditor();
 
             GetOption opts = new GetOption();
-            opts.SetCommandPrompt("Select action you want: ");
+            opts.SetCommandPrompt("What are you going to do? ");
             opts.AddOption("Connect");
             opts.AddOption("Stop");
             GetResult getResult = opts.Get();
@@ -98,30 +98,6 @@ namespace Noah
         private void Client_MessageEvent(object sender, string message)
         {
             RhinoApp.WriteLine(message);
-        }
-
-        private void SetParam(string name)
-        {
-            GH_Canvas canvas = Instances.ActiveCanvas;
-
-            if (canvas != null)
-            {
-                RhinoApp.WriteLine("Found Grasshopper Instances!");
-                GH_Document gH_Document = canvas.Document;
-                var objs = gH_Document.FindObjects(new List<string> { "get" }, 20);
-                if (objs.Count > 0)
-                {
-                    foreach (IGH_DocumentObject obj in objs)
-                    {
-                        if (obj.NickName != name) continue;
-                        
-                    }
-                }
-            }
-            else
-            {
-                RhinoApp.WriteLine("Not found Grasshopper Instances!");
-            }
         }
     }
 }

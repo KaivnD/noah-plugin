@@ -40,7 +40,6 @@ namespace Noah
 
         private void Init()
         {
-            // TODO 每个Rhino客户端需要ID和platform=Rhino, 考虑使用url params
             Client = new WebSocket("ws://localhost:9410/data/server/?platform=Rhino&ID=" + Guid.ToString());
 
             Client.OnMessage += Socket_OnMessage;
@@ -52,7 +51,7 @@ namespace Noah
         private void Socket_OnClose(object sender, CloseEventArgs e)
         {
             // TODO 断线重联
-            MessageEvent(this, "Noah Client connecting is broken");
+            MessageEvent(this, "Noah Client connecting is closed");
         }
 
         private void Socket_OnOpen(object sender, EventArgs e)

@@ -62,12 +62,16 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Load3dm.cs" />
+    <Compile Include="Commands\Load3dm.cs" />
     <Compile Include="Noah.cs" />
-    <Compile Include="NoahClient.cs" />
-    <Compile Include="NoahServer.cs" />
+    <Compile Include="Client\NoahClient.cs" />
+    <Compile Include="Commands\NoahServer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="NoahTask.cs" />
+    <Compile Include="Tasker\NoahTask.cs" />
+    <Compile Include="Tasker\TaskContent.cs" />
+    <Compile Include="Tasker\TaskContentType.cs" />
+    <Compile Include="Tasker\TaskData.cs" />
+    <Compile Include="Tasker\TaskType.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="EmbeddedResources\plugin-utility.ico" />
@@ -75,6 +79,7 @@
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

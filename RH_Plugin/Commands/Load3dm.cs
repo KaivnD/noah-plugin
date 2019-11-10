@@ -4,7 +4,7 @@ using Rhino;
 using Rhino.Commands;
 using Rhino.Input;
 
-namespace NoahPlugin
+namespace Noah.Commands
 {
     public class Load3dm : Command
     {

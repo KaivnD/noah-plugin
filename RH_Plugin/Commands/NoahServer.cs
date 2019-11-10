@@ -4,6 +4,7 @@ using Grasshopper;
 using Grasshopper.GUI.Canvas;
 using Grasshopper.Kernel;
 using Grasshopper.Plugin;
+using Noah.CLient;
 using Rhino;
 using Rhino.Commands;
 using Rhino.DocObjects;
@@ -11,7 +12,7 @@ using Rhino.Input;
 using Rhino.Input.Custom;
 using WebSocketSharp;
 
-namespace Noah
+namespace Noah.Commands
 {
     public class NoahServer : Command
     {

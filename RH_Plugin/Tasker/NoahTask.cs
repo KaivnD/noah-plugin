@@ -15,7 +15,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Noah
+namespace Noah.Tasker
 {
     public class NoahTask
     {
@@ -210,31 +210,5 @@ namespace Noah
             //}
             byte[] bytes = ghLooseChunk.Serialize_Binary();
         }
-    }
-
-    public enum TaskType
-    {
-        Grasshopper,
-        Python
-    }
-
-    public enum TaskContentType
-    {
-        file,
-        @string
-    }
-
-    public class TaskContent
-    {
-        public TaskContentType type { get; set; }
-        public string value { set; get; }
-    }
-
-    public class TaskData
-    {
-        public Guid ID;
-        public string dataID;
-        public string name;
-        public string value;
     }
 }

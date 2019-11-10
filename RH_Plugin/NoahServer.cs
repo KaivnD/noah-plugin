@@ -55,7 +55,7 @@ namespace Noah
 
             GetOption opts = new GetOption();
             opts.SetCommandPrompt("Select action you want: ");
-            opts.AddOption("Start");
+            opts.AddOption("Connect");
             opts.AddOption("Stop");
             GetResult getResult = opts.Get();
             if (getResult == GetResult.Option)
@@ -63,11 +63,13 @@ namespace Noah
                 string whereToGo = opts.Option().EnglishName;
                 switch(whereToGo)
                 {
-                    case "Start":
+                    case "Connect":
                         {
                             if (Client == null)
                             {
-                                Client = new NoahClient(9410);
+                                // TODO 端口应从客户端传过来
+                                int port = 9410;
+                                Client = new NoahClient(port);
                                 Client.MessageEvent += Client_MessageEvent;
                                 Client.ErrorEvent += Client_ErrorEvent;
                             }

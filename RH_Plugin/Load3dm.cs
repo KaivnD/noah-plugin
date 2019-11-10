@@ -27,7 +27,6 @@ namespace NoahPlugin
 
         protected override Result RunCommand(RhinoDoc doc, RunMode mode)
         {
-            // TODO: complete command.
             string path = "";
             Result getArgs = RhinoGet.GetString("加载文件", true, ref path);
             if (File.Exists(path))

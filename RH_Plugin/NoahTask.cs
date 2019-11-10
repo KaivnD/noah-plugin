@@ -22,6 +22,7 @@ namespace Noah
         public Guid ID { get; set; }
         public TaskType type { get; set; }
         public TaskContent content { get; set; }
+        public List<TaskData> dataList { get; set; }
 
         public delegate void EchoHandler(object sender, string message);
 
@@ -69,7 +70,7 @@ namespace Noah
 
             server.AddDocument(doc);
 
-            doc.Properties.ProjectFileName = "测试名称";
+            doc.Properties.ProjectFileName = ID.ToString();
 
             GH_Canvas activeCanvas = Instances.ActiveCanvas;
             if (activeCanvas == null)
@@ -86,6 +87,11 @@ namespace Noah
             doc.NewSolution(false);
         }
 
+        public void BringToFront()
+        {
+            // TODO 将相关Task GH的文档前置
+        }
+
         private void SetInput(GH_Document doc)
         {
             GH_ClusterInputHook[] hooks = doc.ClusterInputHooks();
@@ -96,7 +102,24 @@ namespace Noah
             hooks[0].SetPlaceholderData(data);
             hooks[0].ExpireSolution(true);
         }
-        //public List<Data> DataTable { get; set; }
+
+        internal void SetData(TaskData taskData)
+        {
+            // TODO If taskData ID and dataID match some data inside datalist 
+            // then update else add a brand new data to it
+
+            UpdateData();
+        }
+
+        private void UpdateData()
+        {
+            if (dataList.Count == 0 || dataList == null) return;
+
+            foreach (TaskData data in dataList)
+            {
+                // TODO update data to gh document
+            }
+        }
     }
 
     public enum TaskType
@@ -117,18 +140,11 @@ namespace Noah
         public string value { set; get; }
     }
 
-    public class Data
+    public class TaskData
     {
-        public string ID;
+        public Guid ID;
+        public string dataID;
         public string name;
         public string value;
-    }
-
-    public interface ITask
-    {
-        Guid ID { get; }
-        TaskType Type { get; }
-        TaskContent Content { get; }
-        List<Data> DataTable { get; }
     }
 }

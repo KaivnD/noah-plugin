@@ -43,12 +43,15 @@ namespace Noah
             }
 
             Grasshopper.DisableBanner();
-            Grasshopper.ShowEditor();
 
-            //if (!Grasshopper.IsEditorLoaded())
-            //{
-            //    Grasshopper.LoadEditor();
-            //}
+            if (!Grasshopper.IsEditorLoaded())
+            {
+                Grasshopper.LoadEditor();
+            }
+
+            // TODO 增加选项，让Noah客户端决定是否开启GH的ui
+            bool show = false;
+            if (show) Grasshopper.ShowEditor();
 
             GetOption opts = new GetOption();
             opts.SetCommandPrompt("Select action you want: ");
@@ -80,7 +83,6 @@ namespace Noah
                     default:
                         break;
                 }
-                RhinoApp.WriteLine();
             }
 
             return Result.Nothing;

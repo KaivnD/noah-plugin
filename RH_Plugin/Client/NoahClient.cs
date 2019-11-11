@@ -16,6 +16,9 @@ namespace Noah.CLient
         private WebSocket Client;
         private List<NoahTask> TaskList = new List<NoahTask>();
 
+        private int RetryCnt = 0;
+        private int MaxRetry = 5;
+
         public delegate void EchoHandler(object sender, string message);
         public event EchoHandler MessageEvent;
         public event EchoHandler ErrorEvent;
@@ -51,8 +54,25 @@ namespace Noah.CLient
 
         private void Socket_OnClose(object sender, CloseEventArgs e)
         {
-            // TODO 断线重联
             MessageEvent(this, "Noah Client connecting is closed");
+            Reconnect();
+        }
+
+        private async void Reconnect()
+        {
+            while (RetryCnt < MaxRetry)
+            {
+                ++RetryCnt;
+
+                MessageEvent(this, "Retrying to connect Noah Client " + RetryCnt + " times.");
+                Connect();
+
+                if (Client.ReadyState == WebSocketState.Open) return;
+
+                await Task.Delay(300);
+            }
+            RetryCnt = 0;
+            ErrorEvent(this, "Could not connect to Noah Client _(:_」∠)_");
         }
 
         private void Socket_OnOpen(object sender, EventArgs e)

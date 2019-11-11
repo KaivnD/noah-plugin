@@ -31,7 +31,7 @@ namespace Noah.CLient
         { 
             Client.Connect();
 
-            Client.Send("{\"route\": \"none\", \"msg\": \"This is Rhino\"}");
+            // Client.Send("{\"route\": \"none\", \"msg\": \"This is Rhino\"}");
         }
 
         public void Close()
@@ -41,7 +41,7 @@ namespace Noah.CLient
 
         private void Init()
         {
-            Client = new WebSocket("ws://localhost:9410/data/server/?platform=Rhino&ID=" + Guid.ToString());
+            Client = new WebSocket("ws://localhost:" + Port.ToString() + "/data/server/?platform=Rhino&ID=" + Guid.ToString());
 
             Client.OnMessage += Socket_OnMessage;
             Client.OnError += Socket_OnError;

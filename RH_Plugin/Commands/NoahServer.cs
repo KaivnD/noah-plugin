@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using Grasshopper;
 using Grasshopper.GUI.Canvas;
 using Grasshopper.Kernel;
@@ -58,7 +59,7 @@ namespace Noah.Commands
             GetOption go = null;
             while (true)
             {
-                var port = new OptionInteger(0, 1024, 65535);
+                var port = new OptionInteger(Port, 1024, 65535);
                 var toggle = new OptionToggle(ShowEditor, "Hide", "Show");
 
                 go = new GetOption();
@@ -66,6 +67,7 @@ namespace Noah.Commands
                 go.SetCommandPrompt("Noah Server");
                 go.AddOption("Connect");
                 go.AddOption("Stop");
+                go.AddOption("Observer");
                 go.AddOptionInteger("Port", ref port);
                 go.AddOptionToggle("Editor", ref toggle);
 
@@ -86,9 +88,16 @@ namespace Noah.Commands
 
                     if (Client == null)
                     {
-                        Client = new NoahClient(Port);
-                        Client.MessageEvent += Client_MessageEvent;
-                        Client.ErrorEvent += Client_ErrorEvent;
+                        try
+                        {
+                            Client = new NoahClient(Port);
+                            Client.MessageEvent += Client_MessageEvent;
+                            Client.ErrorEvent += Client_ErrorEvent;
+                        } catch (Exception ex)
+                        {
+                            RhinoApp.WriteLine("Error: " + ex.Message);
+                        }
+
                     }
 
                     Client.Connect();
@@ -103,6 +112,18 @@ namespace Noah.Commands
                     if (Port == 0) continue;
 
                     if (Client != null) Client.Close();
+                    break;
+                }
+
+                if (whereToGo == "Observer")
+                {
+                    if (Port == 0)
+                    {
+                        RhinoApp.WriteLine("Server connecting need a port!");
+                        continue;
+                    }
+
+                    Process.Start("http://localhost:" + Port + "/data/center");
                     break;
                 }
 

@@ -3,6 +3,7 @@ using Grasshopper;
 using Grasshopper.GUI.Canvas;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Data;
+using Grasshopper.Kernel.Parameters;
 using Grasshopper.Kernel.Special;
 using Grasshopper.Kernel.Types;
 using Grasshopper.Plugin;
@@ -127,11 +128,15 @@ namespace Noah.Tasker
 
             if (match != null)
             {
+                if (match.value == taskData.value) return;
+
                 match.value = taskData.value;
                 match.name = taskData.name;
             } else dataList.Add(taskData);
 
             UpdateData();
+
+            dataList.Clear();
         }
 
         private void UpdateData()
@@ -158,30 +163,71 @@ namespace Noah.Tasker
 
                 if (data == null) continue;
 
-                object value = data.value;
+                var m_data = SingleDataStructrue(data.value);
 
-                GH_Structure<IGH_Goo> m_data = new GH_Structure<IGH_Goo>();
-
-                GH_Number castNumber = null;
-                GH_String castString = null;
-                if (GH_Convert.ToGHNumber(value, GH_Conversion.Both, ref castNumber))
-                {
-                    m_data.Append(new GH_ObjectWrapper(castNumber));
-                }
-                else if (GH_Convert.ToGHString(value, GH_Conversion.Both, ref castString))
-                {
-                    m_data.Append(new GH_ObjectWrapper(castString));
-                }
-                else
-                {
-                    m_data.Append((IGH_Goo)value);
-                }
-
-                // TODO If value is not change then continue
+                if (Equals(hook.VolatileData, m_data)) continue;
 
                 hook.SetPlaceholderData(m_data);
                 hook.ExpireSolution(true);
             }
+
+            // for data placeholder inside cluster (deep = 1)
+
+            var clusters = new List<GH_Cluster>();
+            foreach (var obj in doc.Objects)
+            {
+                var cluster = obj as GH_Cluster;
+                if (cluster == null) continue;
+                clusters.Add(cluster);
+            }
+
+            if (clusters.Count == 0) return;
+
+
+            foreach (var cluster in clusters)
+            {
+                foreach (var obj in cluster.Document("").Objects)
+                {
+                    var param = obj as IGH_Param;
+                    if (param == null) continue;
+
+                    string nickname = param.NickName;
+
+                    if (!nickname.StartsWith("@")) continue;
+
+                    TaskData data = dataList.Find(x => x.name == nickname || x.dataID == nickname);
+
+                    if (data == null) continue;
+
+                    Utility.InvokeMethod(param, "Script_ClearPersistentData");
+                    Utility.InvokeMethod(param, "Script_AddPersistentData", new List<object>() { data.value });
+
+                    param.ExpireSolution(true);
+                    cluster.ExpireSolution(true);
+                }
+            }
+        }
+
+        private GH_Structure<IGH_Goo> SingleDataStructrue(object value)
+        {
+            GH_Structure<IGH_Goo> m_data = new GH_Structure<IGH_Goo>();
+
+            GH_Number castNumber = null;
+            GH_String castString = null;
+            if (GH_Convert.ToGHNumber(value, GH_Conversion.Both, ref castNumber))
+            {
+                m_data.Append(new GH_ObjectWrapper(castNumber));
+            }
+            else if (GH_Convert.ToGHString(value, GH_Conversion.Both, ref castString))
+            {
+                m_data.Append(new GH_ObjectWrapper(castString));
+            }
+            else
+            {
+                m_data.Append((IGH_Goo)value);
+            }
+
+            return m_data;
         }
 
         private void StoreOutput()

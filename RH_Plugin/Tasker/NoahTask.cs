@@ -26,9 +26,12 @@ namespace Noah.Tasker
         public TaskContent content { get; set; }
         public List<TaskData> dataList { get; set; }
 
+        private bool GhDocInit;
+
         public delegate void EchoHandler(object sender, string message);
 
         public event EchoHandler ErrorEvent;
+        public event EchoHandler DoneEvent;
 
         public void Run()
         {
@@ -55,6 +58,8 @@ namespace Noah.Tasker
             io.Open(file);
 
             GH_Document doc = GH_Document.DuplicateDocument(io.Document);
+
+            doc.SolutionEnd += Doc_SolutionEnd;
 
             if (doc == null)
             {
@@ -84,9 +89,21 @@ namespace Noah.Tasker
             activeCanvas.Document = doc;
             activeCanvas.Document.IsModified = false;
             activeCanvas.Refresh();
-            doc.NewSolution(false);
 
+            GhDocInit = true;
+            SolutionEndCnt = 0;
             UpdateData();
+        }
+
+        private int SolutionEndCnt = 0;
+
+        private void Doc_SolutionEnd(object sender, GH_SolutionEventArgs e)
+        {
+            ++SolutionEndCnt;
+
+            if (GhDocInit && SolutionEndCnt < dataList.Count - 1) return;
+
+            DoneEvent(sender, ID.ToString());
         }
 
         public void BringToFront()
@@ -112,8 +129,9 @@ namespace Noah.Tasker
 
             activeCanvas.Document = doc;
             activeCanvas.Refresh();
-            doc.NewSolution(false);
 
+            GhDocInit = true;
+            SolutionEndCnt = 0;
             UpdateData();
         }
 
@@ -134,9 +152,8 @@ namespace Noah.Tasker
                 match.name = taskData.name;
             } else dataList.Add(taskData);
 
+            GhDocInit = false;
             UpdateData();
-
-            dataList.Clear();
         }
 
         private void UpdateData()
@@ -168,7 +185,8 @@ namespace Noah.Tasker
                 if (Equals(hook.VolatileData, m_data)) continue;
 
                 hook.SetPlaceholderData(m_data);
-                hook.ExpireSolution(true);
+
+                if (!GhDocInit) hook.ExpireSolution(true);
             }
 
             // for data placeholder inside cluster (deep = 1)
@@ -202,10 +220,14 @@ namespace Noah.Tasker
                     Utility.InvokeMethod(param, "Script_ClearPersistentData");
                     Utility.InvokeMethod(param, "Script_AddPersistentData", new List<object>() { data.value });
 
-                    param.ExpireSolution(true);
-                    cluster.ExpireSolution(true);
+                    if (!GhDocInit) param.ExpireSolution(true);
+                    if (!GhDocInit) cluster.ExpireSolution(true);
                 }
             }
+
+            if (GhDocInit) doc.NewSolution(true);
+
+            dataList.Clear();
         }
 
         private GH_Structure<IGH_Goo> SingleDataStructrue(object value)

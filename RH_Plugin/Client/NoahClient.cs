@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Noah.Tasker;
 using System;
 using System.Collections.Generic;
@@ -31,7 +32,8 @@ namespace Noah.CLient
         }
 
         public void Connect()
-        { 
+        {
+            RetryCnt = 0;
             Client.Connect();
 
             // Client.Send("{\"route\": \"none\", \"msg\": \"This is Rhino\"}");
@@ -71,7 +73,6 @@ namespace Noah.CLient
 
                 await Task.Delay(300);
             }
-            RetryCnt = 0;
             ErrorEvent(this, "Could not connect to Noah Client _(:_」∠)_");
         }
 
@@ -113,6 +114,14 @@ namespace Noah.CLient
                             task.ErrorEvent += (sd, msg) =>
                             {
                                 MessageEvent(sd, msg);
+                            };
+
+                            task.DoneEvent += (sd, id) =>
+                            {
+                                var obj = new JObject();
+                                obj["route"] = "task-end";
+                                obj["id"] = id;
+                                Client.Send(obj.ToString());
                             };
 
                             task.Run();

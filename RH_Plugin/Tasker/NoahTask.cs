@@ -16,7 +16,6 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Xamarin.Essentials;
 
 namespace Noah.Tasker
 {
@@ -46,7 +45,7 @@ namespace Noah.Tasker
                 }
                 if (platform == Platform.Mac)
                 {
-                    MainThread.BeginInvokeOnMainThread(LoadGhDocument);
+                    //
                 }
             }
         }

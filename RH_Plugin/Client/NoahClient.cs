@@ -33,7 +33,6 @@ namespace Noah.CLient
 
         public void Connect()
         {
-            RetryCnt = 0;
             Client.Connect();
 
             // Client.Send("{\"route\": \"none\", \"msg\": \"This is Rhino\"}");
@@ -60,8 +59,9 @@ namespace Noah.CLient
             Reconnect();
         }
 
-        private async void Reconnect()
+        public async void Reconnect()
         {
+            RetryCnt = 0;
             while (RetryCnt < MaxRetry)
             {
                 ++RetryCnt;

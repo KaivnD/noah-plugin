@@ -7,6 +7,7 @@ using Grasshopper.Kernel.Parameters;
 using Grasshopper.Kernel.Special;
 using Grasshopper.Kernel.Types;
 using Grasshopper.Plugin;
+using Noah.Utils;
 using Rhino;
 using System;
 using System.Collections.Generic;
@@ -15,6 +16,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Xamarin.Essentials;
 
 namespace Noah.Tasker
 {
@@ -26,8 +28,6 @@ namespace Noah.Tasker
         public TaskContent content { get; set; }
         public List<TaskData> dataList { get; set; }
 
-        private bool GhDocInit;
-
         public delegate void EchoHandler(object sender, string message);
 
         public event EchoHandler ErrorEvent;
@@ -37,9 +37,17 @@ namespace Noah.Tasker
         {
             if (type == TaskType.Grasshopper)
             {
-                Thread thread = new Thread(new ThreadStart(LoadGhDocument));
-                thread.SetApartmentState(ApartmentState.STA); // 重点
-                thread.Start();
+                Platform platform = SystemPlatform.Get();
+                if (platform == Platform.Windows)
+                {
+                    Thread thread = new Thread(new ThreadStart(LoadGhDocument));
+                    thread.SetApartmentState(ApartmentState.STA); // 重点
+                    thread.Start();
+                }
+                if (platform == Platform.Mac)
+                {
+                    MainThread.BeginInvokeOnMainThread(LoadGhDocument);
+                }
             }
         }
 
@@ -90,19 +98,20 @@ namespace Noah.Tasker
             activeCanvas.Document.IsModified = false;
             activeCanvas.Refresh();
 
-            GhDocInit = true;
-            SolutionEndCnt = 0;
-            UpdateData();
+            // SolutionEndCnt = 0;
+            UpdateData(true);
         }
 
-        private int SolutionEndCnt = 0;
+        // private int SolutionEndCnt = 0;
 
         private void Doc_SolutionEnd(object sender, GH_SolutionEventArgs e)
         {
-            ++SolutionEndCnt;
+            // TODO SolutionEnd 多次出发，(・∀・(・∀・(・∀・*)
 
-            if (GhDocInit && SolutionEndCnt < dataList.Count - 1) return;
-
+            //++SolutionEndCnt;
+            
+            //if (GhDocInit && SolutionEndCnt < dataList.Count - 1) return;
+            //ErrorEvent(sender, SolutionEndCnt.ToString());
             DoneEvent(sender, ID.ToString());
         }
 
@@ -130,9 +139,8 @@ namespace Noah.Tasker
             activeCanvas.Document = doc;
             activeCanvas.Refresh();
 
-            GhDocInit = true;
-            SolutionEndCnt = 0;
-            UpdateData();
+            // SolutionEndCnt = 0;
+            UpdateData(true);
         }
 
         internal void SetData(TaskData taskData)
@@ -152,11 +160,10 @@ namespace Noah.Tasker
                 match.name = taskData.name;
             } else dataList.Add(taskData);
 
-            GhDocInit = false;
-            UpdateData();
+            UpdateData(false);
         }
 
-        private void UpdateData()
+        private void UpdateData(bool recomputeOnTheEnd)
         {
             if (dataList.Count == 0 || dataList == null) return;
 
@@ -186,7 +193,7 @@ namespace Noah.Tasker
 
                 hook.SetPlaceholderData(m_data);
 
-                if (!GhDocInit) hook.ExpireSolution(true);
+                if (!recomputeOnTheEnd) hook.ExpireSolution(true);
             }
 
             // for data placeholder inside cluster (deep = 1)
@@ -220,12 +227,12 @@ namespace Noah.Tasker
                     Utility.InvokeMethod(param, "Script_ClearPersistentData");
                     Utility.InvokeMethod(param, "Script_AddPersistentData", new List<object>() { data.value });
 
-                    if (!GhDocInit) param.ExpireSolution(true);
-                    if (!GhDocInit) cluster.ExpireSolution(true);
+                    if (!recomputeOnTheEnd) param.ExpireSolution(true);
+                    if (!recomputeOnTheEnd) cluster.ExpireSolution(true);
                 }
             }
 
-            if (GhDocInit) doc.NewSolution(true);
+            if (recomputeOnTheEnd) doc.NewSolution(true);
 
             dataList.Clear();
         }

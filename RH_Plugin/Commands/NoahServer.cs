@@ -6,6 +6,7 @@ using Grasshopper.GUI.Canvas;
 using Grasshopper.Kernel;
 using Grasshopper.Plugin;
 using Noah.CLient;
+using Noah.Utils;
 using Rhino;
 using Rhino.Commands;
 using Rhino.DocObjects;
@@ -93,14 +94,17 @@ namespace Noah.Commands
                             Client = new NoahClient(Port);
                             Client.MessageEvent += Client_MessageEvent;
                             Client.ErrorEvent += Client_ErrorEvent;
-                        } catch (Exception ex)
+                        }
+                        catch (Exception ex)
                         {
                             RhinoApp.WriteLine("Error: " + ex.Message);
                         }
 
+                        Client.Connect();
                     }
+                    else Client.Reconnect();
 
-                    Client.Connect();
+
 
                     if (ShowEditor) Grasshopper.ShowEditor();
 

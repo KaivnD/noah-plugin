@@ -16,7 +16,6 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-
 namespace Noah.Tasker
 {
     public class NoahTask
@@ -45,7 +44,7 @@ namespace Noah.Tasker
                 }
                 if (platform == Platform.Mac)
                 {
-                    //
+                    RhinoApp.InvokeOnUiThread(new Action(() => { LoadGhDocument(); }));
                 }
             }
         }
@@ -217,7 +216,7 @@ namespace Noah.Tasker
 
                     string nickname = param.NickName;
 
-                    if (!nickname.StartsWith("@")) continue;
+                    if (!nickname.StartsWith("@", StringComparison.Ordinal)) continue;
 
                     TaskData data = dataList.Find(x => x.name == nickname || x.dataID == nickname);
 
@@ -232,6 +231,16 @@ namespace Noah.Tasker
             }
 
             if (recomputeOnTheEnd) doc.NewSolution(true);
+
+            GH_Canvas activeCanvas = Instances.ActiveCanvas;
+            if (activeCanvas == null)
+            {
+                ErrorEvent(this, "No Active Canvas exist!");
+                return;
+            }
+
+            activeCanvas.Document.IsModified = false;
+            activeCanvas.Refresh();
 
             dataList.Clear();
         }

@@ -72,6 +72,7 @@
     <Compile Include="Tasker\TaskContentType.cs" />
     <Compile Include="Tasker\TaskData.cs" />
     <Compile Include="Tasker\TaskType.cs" />
+    <Compile Include="Utils\Platform.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="EmbeddedResources\plugin-utility.ico" />

@@ -33,7 +33,7 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
-    <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug(Mac)|AnyCPU'">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug(Mac)|AnyCPU'">
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
@@ -86,6 +86,8 @@
     <Compile Include="Tasker\TaskContentType.cs" />
     <Compile Include="Tasker\TaskData.cs" />
     <Compile Include="Tasker\TaskType.cs" />
+    <Compile Include="Utils\File3dmWriter.cs" />
+    <Compile Include="Utils\ObjectLayerInfo.cs" />
     <Compile Include="Utils\Platform.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -118,7 +120,8 @@ Erase "$(TargetPath)"</PostBuildEvent>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug(Mac)|AnyCPU'">
     <StartProgram>C:\Program Files\Rhino 6\System\Rhino.exe</StartProgram>
-    <StartArguments></StartArguments>
+    <StartArguments>
+    </StartArguments>
     <StartAction>Program</StartAction>
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>

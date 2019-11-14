@@ -9,8 +9,10 @@ using Grasshopper.Kernel.Types;
 using Grasshopper.Plugin;
 using Noah.Utils;
 using Rhino;
+using Rhino.Geometry;
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -35,17 +37,7 @@ namespace Noah.Tasker
         {
             if (type == TaskType.Grasshopper)
             {
-                Platform platform = SystemPlatform.Get();
-                if (platform == Platform.Windows)
-                {
-                    Thread thread = new Thread(new ThreadStart(LoadGhDocument));
-                    thread.SetApartmentState(ApartmentState.STA); // 重点
-                    thread.Start();
-                }
-                if (platform == Platform.Mac)
-                {
-                    RhinoApp.InvokeOnUiThread(new Action(() => { LoadGhDocument(); }));
-                }
+                RhinoApp.InvokeOnUiThread(new Action(() => { LoadGhDocument(); }));
             }
         }
 
@@ -111,6 +103,8 @@ namespace Noah.Tasker
             //if (GhDocInit && SolutionEndCnt < dataList.Count - 1) return;
             //ErrorEvent(sender, SolutionEndCnt.ToString());
             DoneEvent(sender, ID.ToString());
+
+            StoreOutput();
         }
 
         public void BringToFront()
@@ -267,31 +261,135 @@ namespace Noah.Tasker
             return m_data;
         }
 
+        private SortedDictionary<string, string> ConvertUrlParam(string param)
+        {
+            SortedDictionary<string, string> configMap = new SortedDictionary<string, string>();
+
+            string[] configs = param.Split('&');
+            configs = configs.Where(s => !string.IsNullOrEmpty(s)).ToArray();
+
+            foreach (string config in configs)
+            {
+                string[] args = config.Split('=');
+                if (args.Length != 2)
+                    continue;
+                if (!configMap.ContainsKey(args[0]))
+                {
+                    configMap.Add(args[0], args[1]);
+                }
+            }
+            return configMap;
+        }
+
         private void StoreOutput()
         {
-            GH_LooseChunk ghLooseChunk = new GH_LooseChunk("Grasshopper Data");
-            ghLooseChunk.SetGuid("OriginId", this.ID);
+            GH_DocumentServer doc_server = Instances.DocumentServer;
 
-            //IGH_Param ghParam = Params.Input[index];
-            //IGH_Structure volatileData = ghParam.VolatileData;
-            //if (string.IsNullOrEmpty(ghParam.NickName))
-            //{
-            //    ErrorEvent(ghLooseChunk, "Parameters without a name will not be included.");
-            //}
-            //else
-            //{
-            //    GH_IWriter chunk = ghLooseChunk.CreateChunk("Block", index);
-            //    chunk.SetString("Name", ghParam.NickName);
-            //    chunk.SetBoolean("Empty", volatileData.IsEmpty);
-            //    if (!volatileData.IsEmpty)
-            //    {
-            //        GH_Structure<IGH_Goo> tree;
-            //        // access.GetDataTree<IGH_Goo>(index, out tree);
-            //        if (!tree.Write(chunk.CreateChunk("Data")))
-            //            ErrorEvent(ghLooseChunk, string.Format("There was a problem writing the {0} data.", (object)ghParam.NickName));
-            //    }
-            //}
-            byte[] bytes = ghLooseChunk.Serialize_Binary();
+            if (doc_server == null)
+            {
+                ErrorEvent(this, "No Document Server exist!");
+                return;
+            }
+
+            GH_Document doc = doc_server.ToList().Find(x => x.Properties.ProjectFileName == ID.ToString());
+
+            if (doc == null) return;
+
+            var hooks = doc.ClusterOutputHooks();
+
+            foreach(var hook in hooks)
+            {
+                string info = hook.CustomDescription;
+                var paraMap = ConvertUrlParam(info);
+                var volatileData = hook.VolatileData;
+                string index, type;
+                if (paraMap.TryGetValue("Index", out index) 
+                    && paraMap.TryGetValue("Type", out type))
+                {
+                    switch (type)
+                    {
+                        case "CSV":
+                            {
+                                var allData = volatileData.AllData(true);
+                                List<string> sList = new List<string>();
+                                allData.ToList().ForEach(el =>
+                                {
+                                    string tmp = "";
+                                    GH_Convert.ToString(el, out tmp, GH_Conversion.Both);
+                                    sList.Add(tmp);
+                                });
+
+                                string csv = string.Join(Environment.NewLine, sList);
+
+                                // TODO Store CSV
+
+                                break;
+                            }
+                        case "3DM":
+                            {
+
+                                string fileName = Convert.ToString(index) + ".3dm";
+                                string filePath = Path.Combine(@"D:\test", fileName);
+                                ErrorEvent(this, filePath);
+                                File3dmWriter writer = new File3dmWriter(filePath);
+                                List<int> ll = new List<int>();
+                                List<ObjectLayerInfo> layeredObj = new List<ObjectLayerInfo>();
+
+                                var allData = volatileData.AllData(true);
+
+                                foreach(var data in allData)
+                                {
+                                    GeometryBase obj = GH_Convert.ToGeometryBase(data);
+                                    if (obj == null) continue;
+                                    ErrorEvent(this, data.ToString());
+                                    string layer = obj.GetUserString("Layer");
+                                    layeredObj.Add(new ObjectLayerInfo(obj, layer, Color.Black));
+                                }
+                                ErrorEvent(this, layeredObj.Count.ToString());
+                                layeredObj.ForEach(x =>
+                                {
+                                    writer.ChildLayerSolution(x.Name);
+                                    ll.Add(writer.CreateLayer(x.Name, x.Color));
+                                });
+                                if (layeredObj.Count > 0)
+                                {
+                                    writer.Write(layeredObj, ll);
+                                }
+
+                                break;
+                            }
+                        case "Data":
+                            {
+                                GH_LooseChunk ghLooseChunk = new GH_LooseChunk("Grasshopper Data");
+                                ghLooseChunk.SetGuid("OriginId", this.ID);
+
+                                GH_IWriter chunk = ghLooseChunk.CreateChunk("Block", 0);
+                                chunk.SetString("Name", hook.CustomNickName);
+                                chunk.SetBoolean("Empty", volatileData.IsEmpty);
+                                if (!volatileData.IsEmpty)
+                                {
+                                    GH_Structure<IGH_Goo> tree = volatileData as GH_Structure<IGH_Goo>;
+
+                                    if (!tree.Write(chunk.CreateChunk("Data")))
+                                        ErrorEvent(ghLooseChunk, string.Format("There was a problem writing the {0} data.", (object)hook.CustomNickName));
+                                }
+
+                                byte[] bytes = ghLooseChunk.Serialize_Binary();
+
+                                string fileName = Convert.ToString(index) + ".data";
+                                string filePath = Path.Combine(@"D:\test", fileName);
+
+                                File.WriteAllBytes(filePath, bytes);
+                                // TODO Store data
+
+                                break;
+                            }
+                        default:
+                            break;
+                    }
+                }
+
+            }
         }
     }
 }

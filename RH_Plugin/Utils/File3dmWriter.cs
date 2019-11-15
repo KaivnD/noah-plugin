@@ -43,74 +43,67 @@ namespace Noah.Utils
 
         public void ChildLayerSolution(string name)
         {
-            if (name.Contains("::"))
-            {
-                string tmp = name.Replace("::", "-");
-                string[] nameArr = tmp.Split('-');
-                Layer parent = FindLayerByName(nameArr[0]);
-                if (parent == null)
-                {
-                    Layer l = new Layer();
-                    l.Name = nameArr[0];
-                    l.Color = Color.Black;
-                    m_file.AllLayers.Add(l);
-                }
-            }
+            if (name.Contains("::")) return;
+            string tmp = name.Replace("::", "-");
+            string[] nameArr = tmp.Split('-');
+
+            Layer parent = FindLayerByName(nameArr[0]);
+
+            if (parent != null) return;
+
+            Layer l = new Layer();
+            l.Name = nameArr[0];
+            l.Color = Color.Black;
+            m_file.AllLayers.Add(l);
         }
 
         public int CreateLayer(string layerPath, Color color)
         {
             // 查询指定路径图层是否存在
             Layer layer = FindLayerByFullPath(layerPath);
-            int layerIndex = -1;
-            if (layer == null)
+
+            if (layer != null) return layer.Index;
+
+            ChildLayerSolution(layerPath);
+
+            // Null不存在，需要创建
+            if (layerPath.Contains("::"))
             {
-                // Null不存在，需要创建
-                if (layerPath.Contains("::"))
-                {
-                    // 这种情况需要先创建父图层，再创建子图层
-                    string tmp = layerPath.Replace("::", "-");
-                    string[] nameArr = tmp.Split('-');
-                    Layer parent = FindLayerByName(nameArr[0]);
-                    if (parent == null)
-                    {
-                        Layer l = new Layer();
-                        l.Name = nameArr[0];
-                        l.Color = Color.Black;
-                        m_layers.Add(l);
-                        parent = l;
-                    }
-                    Layer child = FindLayerByFullPath(layerPath);
-                    if (child == null)
-                    {
-                        Layer l = new Layer();
-                        l.ParentLayerId = parent.Id;
-                        l.Name = nameArr[1];
-                        l.Color = color;
-                        m_layers.Add(l);
-                        layerIndex = m_layers.Count - 1;
-                    }
-                    else layerIndex = child.Index;
-                }
-                else
-                {
-                    // 这种情况直接创建图层
-                    Layer la = FindLayerByName(layerPath);
-                    if (la == null)
-                    {
-                        Layer l = new Layer();
-                        l.Name = layerPath;
-                        l.Color = color;
-                        layer = l;
-                        m_layers.Add(l);
-                        layerIndex = m_layers.Count - 1;
-                    }
-                    else layerIndex = la.Index;
-                }
+                // 这种情况需要先创建父图层，再创建子图层
+                string tmp = layerPath.Replace("::", "-");
+                string[] nameArr = tmp.Split('-');
+
+                Layer parent = FindLayerByFullPath(nameArr[0]);
+                if (parent == null) return 0;
+
+                Layer child = FindLayerByFullPath(layerPath);
+
+                if (child != null) return child.Index;
+
+                Layer l = new Layer();
+                l.ParentLayerId = parent.Id;
+                l.Name = nameArr[1];
+                l.Color = color;
+                m_layers.Add(l);
+
+                return m_layers.Count - 1;
             }
-            else layerIndex = layer.Index;
-            return layerIndex;
+            else
+            {
+                // 这种情况直接创建图层
+                Layer la = FindLayerByFullPath(layerPath);
+                if (la != null) return la.Index;
+
+                Layer l = new Layer();
+                l.Name = layerPath;
+                l.Color = color;
+                layer = l;
+                m_layers.Add(l);
+
+                return m_layers.Count - 1;
+            }
         }
+
         private Layer FindLayerByName(string name)
         {
             Layer ll = (from layer in m_file.AllLayers

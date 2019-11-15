@@ -118,14 +118,20 @@ namespace Noah.CLient
 
                             task.DoneEvent += (sd, id) =>
                             {
-                                var obj = new JObject();
-                                obj["route"] = "task-end";
-                                obj["id"] = id;
+                                var obj = new JObject
+                                {
+                                    ["route"] = "task-end",
+                                    ["id"] = id
+                                };
                                 Client.Send(obj.ToString());
                             };
 
                             task.Run();
 
+                            break;
+                        }
+                    case ClientEventType.group:
+                        {
                             break;
                         }
                     case ClientEventType.message:
@@ -172,6 +178,7 @@ namespace Noah.CLient
     {
         message,
         task,
-        data
+        data,
+        group
     }
 }

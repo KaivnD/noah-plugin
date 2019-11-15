@@ -51,9 +51,11 @@ namespace Noah.Utils
 
             if (parent != null) return;
 
-            Layer l = new Layer();
-            l.Name = nameArr[0];
-            l.Color = Color.Black;
+            Layer l = new Layer
+            {
+                Name = nameArr[0],
+                Color = Color.Black
+            };
             m_file.AllLayers.Add(l);
         }
 
@@ -80,10 +82,12 @@ namespace Noah.Utils
 
                 if (child != null) return child.Index;
 
-                Layer l = new Layer();
-                l.ParentLayerId = parent.Id;
-                l.Name = nameArr[1];
-                l.Color = color;
+                Layer l = new Layer
+                {
+                    ParentLayerId = parent.Id,
+                    Name = nameArr[1],
+                    Color = color
+                };
                 m_layers.Add(l);
 
                 return m_layers.Count - 1;
@@ -94,9 +98,11 @@ namespace Noah.Utils
                 Layer la = FindLayerByFullPath(layerPath);
                 if (la != null) return la.Index;
 
-                Layer l = new Layer();
-                l.Name = layerPath;
-                l.Color = color;
+                Layer l = new Layer
+                {
+                    Name = layerPath,
+                    Color = color
+                };
                 layer = l;
                 m_layers.Add(l);
 
@@ -124,8 +130,10 @@ namespace Noah.Utils
             for (int i = 0; i < G.Count; i++)
             {
                 GeometryBase g = GH_Convert.ToGeometryBase(G[i].Geometry);
-                ObjectAttributes attr = new ObjectAttributes();
-                attr.LayerIndex = att[i];
+                ObjectAttributes attr = new ObjectAttributes
+                {
+                    LayerIndex = att[i]
+                };
 
                 if (g != null)
                 {

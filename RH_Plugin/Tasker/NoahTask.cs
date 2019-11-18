@@ -9,6 +9,7 @@ using Grasshopper.Kernel.Types;
 using Grasshopper.Plugin;
 using Noah.Utils;
 using Rhino;
+using Rhino.DocObjects;
 using Rhino.Geometry;
 using System;
 using System.Collections.Generic;
@@ -27,6 +28,7 @@ namespace Noah.Tasker
         public TaskType type { get; set; }
         public TaskContent content { get; set; }
         public List<TaskData> dataList { get; set; }
+        public List<TaskData> results { get; }
 
         public delegate void EchoHandler(object sender, string message);
 
@@ -37,7 +39,17 @@ namespace Noah.Tasker
         {
             if (type == TaskType.Grasshopper)
             {
-                RhinoApp.InvokeOnUiThread(new Action(() => { LoadGhDocument(); }));
+                Platform platform = SystemPlatform.Get();
+                if (platform == Platform.Windows)
+                {
+                    Thread thread = new Thread(new ThreadStart(LoadGhDocument));
+                    thread.SetApartmentState(ApartmentState.STA); // 重点
+                    thread.Start();
+                }
+                if (platform == Platform.Mac)
+                {
+                    RhinoApp.InvokeOnUiThread(new Action(() => { LoadGhDocument(); }));
+                }
             }
         }
 
@@ -193,8 +205,7 @@ namespace Noah.Tasker
             var clusters = new List<GH_Cluster>();
             foreach (var obj in doc.Objects)
             {
-                var cluster = obj as GH_Cluster;
-                if (cluster == null) continue;
+                if (!(obj is GH_Cluster cluster)) continue;
                 clusters.Add(cluster);
             }
 
@@ -205,8 +216,7 @@ namespace Noah.Tasker
             {
                 foreach (var obj in cluster.Document("").Objects)
                 {
-                    var param = obj as IGH_Param;
-                    if (param == null) continue;
+                    if (!(obj is IGH_Param param)) continue;
 
                     string nickname = param.NickName;
 
@@ -297,14 +307,13 @@ namespace Noah.Tasker
 
             var hooks = doc.ClusterOutputHooks();
 
-            foreach(var hook in hooks)
+            foreach (var hook in hooks)
             {
                 string info = hook.CustomDescription;
                 var paraMap = ConvertUrlParam(info);
                 var volatileData = hook.VolatileData;
-                string index, type;
-                if (paraMap.TryGetValue("Index", out index) 
-                    && paraMap.TryGetValue("Type", out type))
+                if (paraMap.TryGetValue("Index", out string index)
+                    && paraMap.TryGetValue("Type", out string type))
                 {
                     switch (type)
                     {
@@ -314,8 +323,7 @@ namespace Noah.Tasker
                                 List<string> sList = new List<string>();
                                 allData.ToList().ForEach(el =>
                                 {
-                                    string tmp = "";
-                                    GH_Convert.ToString(el, out tmp, GH_Conversion.Both);
+                                    GH_Convert.ToString(el, out string tmp, GH_Conversion.Both);
                                     sList.Add(tmp);
                                 });
 
@@ -327,34 +335,35 @@ namespace Noah.Tasker
                             }
                         case "3DM":
                             {
-
-                                string fileName = Convert.ToString(index) + ".3dm";
+                                string fileName = "test1.3dm";
                                 string filePath = Path.Combine(@"D:\test", fileName);
-                                ErrorEvent(this, filePath);
+
                                 File3dmWriter writer = new File3dmWriter(filePath);
-                                List<int> ll = new List<int>();
-                                List<ObjectLayerInfo> layeredObj = new List<ObjectLayerInfo>();
 
-                                var allData = volatileData.AllData(true);
-
-                                foreach(var data in allData)
+                                foreach (var data in volatileData.AllData(true))
                                 {
                                     GeometryBase obj = GH_Convert.ToGeometryBase(data);
-                                    if (obj == null) continue;
-                                    ErrorEvent(this, data.ToString());
+                                    if (obj == null)
+                                    {
+                                        ErrorEvent(this, data.TypeName);
+                                        continue;
+                                    }
+
                                     string layer = obj.GetUserString("Layer");
-                                    layeredObj.Add(new ObjectLayerInfo(obj, layer, Color.Black));
+                                    if (layer == null) continue;
+                                    ObjectAttributes att = new ObjectAttributes
+                                    {
+                                        LayerIndex = writer.GetLayer(layer, Color.Black)
+                                    };
+
+                                    writer.ObjectMap.Add(att, obj);
+
+                                    ErrorEvent(this, "写入" + obj.ToString());
                                 }
-                                ErrorEvent(this, layeredObj.Count.ToString());
-                                layeredObj.ForEach(x =>
-                                {
-                                    writer.ChildLayerSolution(x.Name);
-                                    ll.Add(writer.CreateLayer(x.Name, x.Color));
-                                });
-                                if (layeredObj.Count > 0)
-                                {
-                                    writer.Write(layeredObj, ll);
-                                }
+
+                                writer.Write();
+
+                                // AsyncRunTask(filePath, volatileData.AllData(true));
 
                                 break;
                             }
@@ -376,10 +385,6 @@ namespace Noah.Tasker
 
                                 byte[] bytes = ghLooseChunk.Serialize_Binary();
 
-                                string fileName = Convert.ToString(index) + ".data";
-                                string filePath = Path.Combine(@"D:\test", fileName);
-
-                                File.WriteAllBytes(filePath, bytes);
                                 // TODO Store data
 
                                 break;
@@ -390,6 +395,14 @@ namespace Noah.Tasker
                 }
 
             }
+        }
+
+        private async void AsyncRunTask(string filePath, IGH_StructureEnumerator allData)
+        {
+            await Task.Factory.StartNew(() => 
+            {
+
+            });
         }
     }
 }

@@ -11,6 +11,6 @@ namespace Noah.Tasker
         public Guid ID;
         public string dataID;
         public string name;
-        public string value;
+        public object value;
     }
 }

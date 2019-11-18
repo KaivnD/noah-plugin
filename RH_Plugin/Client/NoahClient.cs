@@ -132,6 +132,26 @@ namespace Noah.CLient
                         }
                     case ClientEventType.group:
                         {
+                            TaskGroup group = JsonConvert.DeserializeObject<TaskGroup>(eve.data);
+
+                            group.tasks.ForEach(task =>
+                            {
+                                NoahTask _task = (from t in TaskList
+                                                  where Equals(t.ID, task.ID)
+                                                  select t).FirstOrDefault();
+
+                                if (_task != null)
+                                {
+                                    ErrorEvent(this, "This task is already running!");
+                                    _task.BringToFront();
+                                }
+
+                                TaskList.Add(task);
+
+                                MessageEvent(this, task.ID + " is loaded!");
+
+                                task.Run();
+                            });
                             break;
                         }
                     case ClientEventType.message:

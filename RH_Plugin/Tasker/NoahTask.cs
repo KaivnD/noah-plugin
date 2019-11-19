@@ -207,7 +207,44 @@ namespace Noah.Tasker
 
                 var m_data = SingleDataStructrue(data.value);
 
-                if (Equals(hook.VolatileData, m_data)) continue;
+                // if (Equals(hook.VolatileData, m_data)) continue;
+
+                if (File.Exists(data.value.ToString()) && Path.GetExtension(data.value.ToString()) == ".noahdata")
+                {
+                    byte[] array;
+                    try
+                    {
+                        array = File.ReadAllBytes(data.value.ToString());
+                    }
+                    catch
+                    {
+                        continue;
+                    }
+                    GH_LooseChunk val = new GH_LooseChunk("Grasshopper Data");
+                    val.Deserialize_Binary(array);
+                    if (val.ItemCount == 0)
+                    {
+                        continue;
+                    }
+
+                    GH_Structure<IGH_Goo> gH_Structure = new GH_Structure<IGH_Goo>();
+                    GH_IReader val2 = val.FindChunk("Block", 0);
+
+                    bool boolean = val2.GetBoolean("Empty");
+
+                    if (boolean) continue;
+
+                    GH_IReader val3 = val2.FindChunk("Data");
+                    if (val3 == null)
+                    {
+                        continue;
+                    }
+                    else if (!gH_Structure.Read(val3))
+                    {
+                        continue;
+                    }
+                    m_data = gH_Structure;
+                }
 
                 hook.SetPlaceholderData(m_data);
 
@@ -332,7 +369,6 @@ namespace Noah.Tasker
                     && paraMap.TryGetValue("Type", out string type))
                 {
                     string fileName = Path.Combine(outDir, index);
-                    bool infoServer = false;
                     switch (type)
                     {
                         case "CSV":
@@ -349,7 +385,6 @@ namespace Noah.Tasker
 
                                 // TODO Store CSV
                                 fileName += ".csv";
-                                infoServer = true;
                                 File.WriteAllText(fileName, csv);
 
                                 break;
@@ -357,7 +392,6 @@ namespace Noah.Tasker
                         case "3DM":
                             {
                                 fileName += ".3dm";
-                                infoServer = true;
                                 ErrorEvent(this, fileName);
 
                                 File3dmWriter writer = new File3dmWriter(fileName);
@@ -412,8 +446,6 @@ namespace Noah.Tasker
                         default:
                             break;
                     }
-
-                    if (!infoServer) continue;
 
                     InfoEvent(this, new JObject
                     {

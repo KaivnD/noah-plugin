@@ -7,6 +7,7 @@ using Grasshopper.Kernel.Parameters;
 using Grasshopper.Kernel.Special;
 using Grasshopper.Kernel.Types;
 using Grasshopper.Plugin;
+using Newtonsoft.Json.Linq;
 using Noah.Utils;
 using Rhino;
 using Rhino.DocObjects;
@@ -40,6 +41,7 @@ namespace Noah.Tasker
 
         public event EchoHandler ErrorEvent;
         public event EchoHandler DoneEvent;
+        public event EchoHandler InfoEvent;
 
         public void Run()
         {
@@ -75,8 +77,6 @@ namespace Noah.Tasker
 
             GH_Document doc = GH_Document.DuplicateDocument(io.Document);
 
-            doc.SolutionEnd += Doc_SolutionEnd;
-
             if (doc == null)
             {
                 ErrorEvent(this, "Cannot read this file!");
@@ -107,6 +107,7 @@ namespace Noah.Tasker
             activeCanvas.Refresh();
 
             // SolutionEndCnt = 0;
+            doc.SolutionEnd += Doc_SolutionEnd;
             UpdateData(true);
         }
 
@@ -123,6 +124,7 @@ namespace Noah.Tasker
             // TODO SolutionEnd 多次出发，(・∀・(・∀・(・∀・*)
 
             //++SolutionEndCnt;
+            
             
             //if (GhDocInit && SolutionEndCnt < dataList.Count - 1) return;
             //ErrorEvent(sender, SolutionEndCnt.ToString());
@@ -330,6 +332,7 @@ namespace Noah.Tasker
                     && paraMap.TryGetValue("Type", out string type))
                 {
                     string fileName = Path.Combine(outDir, index);
+                    bool infoServer = false;
                     switch (type)
                     {
                         case "CSV":
@@ -345,18 +348,19 @@ namespace Noah.Tasker
                                 string csv = string.Join(Environment.NewLine, sList);
 
                                 // TODO Store CSV
-
-                                File.WriteAllText(fileName + ".csv", csv);
+                                fileName += ".csv";
+                                infoServer = true;
+                                File.WriteAllText(fileName, csv);
 
                                 break;
                             }
                         case "3DM":
                             {
-                                string filePath = fileName + ".3dm";
+                                fileName += ".3dm";
+                                infoServer = true;
+                                ErrorEvent(this, fileName);
 
-                                ErrorEvent(this, filePath);
-
-                                File3dmWriter writer = new File3dmWriter(filePath);
+                                File3dmWriter writer = new File3dmWriter(fileName);
 
                                 foreach (var data in volatileData.AllData(true))
                                 {
@@ -408,6 +412,16 @@ namespace Noah.Tasker
                         default:
                             break;
                     }
+
+                    if (!infoServer) continue;
+
+                    InfoEvent(this, new JObject
+                    {
+                        ["route"] = "task-stored",
+                        ["id"] = ID.ToString(),
+                        ["index"] = index.ToString(),
+                        ["path"] = fileName
+                    }.ToString());
                 }
 
             }

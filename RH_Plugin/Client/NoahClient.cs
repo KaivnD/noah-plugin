@@ -130,6 +130,11 @@ namespace Noah.CLient
                                 Client.Send(obj.ToString());
                             };
 
+                            task.InfoEvent += (sd, json) =>
+                            {
+                                Client.Send(json);
+                            };
+
                             task.Run();
 
                             break;

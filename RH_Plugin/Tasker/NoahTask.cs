@@ -30,6 +30,12 @@ namespace Noah.Tasker
         public List<TaskData> dataList { get; set; }
         public List<TaskData> results { get; }
 
+        public string workspace { set; get; }
+
+        public string taskspace { set; get; }
+
+        public string ticket { set; get; }
+
         public delegate void EchoHandler(object sender, string message);
 
         public event EchoHandler ErrorEvent;
@@ -102,6 +108,12 @@ namespace Noah.Tasker
 
             // SolutionEndCnt = 0;
             UpdateData(true);
+        }
+
+        internal void SetWorkspace(string workDir)
+        {
+            workspace = workDir;
+            taskspace = Path.Combine(workspace, ".noah", "tasks");
         }
 
         // private int SolutionEndCnt = 0;
@@ -307,6 +319,8 @@ namespace Noah.Tasker
 
             var hooks = doc.ClusterOutputHooks();
 
+            string outDir = Path.Combine(taskspace, ID.ToString(), ticket);
+
             foreach (var hook in hooks)
             {
                 string info = hook.CustomDescription;
@@ -315,6 +329,7 @@ namespace Noah.Tasker
                 if (paraMap.TryGetValue("Index", out string index)
                     && paraMap.TryGetValue("Type", out string type))
                 {
+                    string fileName = Path.Combine(outDir, index);
                     switch (type)
                     {
                         case "CSV":
@@ -331,12 +346,15 @@ namespace Noah.Tasker
 
                                 // TODO Store CSV
 
+                                File.WriteAllText(fileName + ".csv", csv);
+
                                 break;
                             }
                         case "3DM":
                             {
-                                string fileName = "test1.3dm";
-                                string filePath = Path.Combine(@"D:\test", fileName);
+                                string filePath = fileName + ".3dm";
+
+                                ErrorEvent(this, filePath);
 
                                 File3dmWriter writer = new File3dmWriter(filePath);
 
@@ -357,13 +375,9 @@ namespace Noah.Tasker
                                     };
 
                                     writer.ObjectMap.Add(att, obj);
-
-                                    ErrorEvent(this, "写入" + obj.ToString());
                                 }
 
                                 writer.Write();
-
-                                // AsyncRunTask(filePath, volatileData.AllData(true));
 
                                 break;
                             }
@@ -385,6 +399,8 @@ namespace Noah.Tasker
 
                                 byte[] bytes = ghLooseChunk.Serialize_Binary();
 
+                                File.WriteAllBytes(fileName + ".noahdata", bytes);
+
                                 // TODO Store data
 
                                 break;
@@ -395,14 +411,6 @@ namespace Noah.Tasker
                 }
 
             }
-        }
-
-        private async void AsyncRunTask(string filePath, IGH_StructureEnumerator allData)
-        {
-            await Task.Factory.StartNew(() => 
-            {
-
-            });
         }
     }
 }

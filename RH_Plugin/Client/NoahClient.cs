@@ -13,6 +13,7 @@ namespace Noah.CLient
     public class NoahClient
     {
         internal int Port;
+        internal string WorkDir;
         internal Guid Guid;
         private WebSocket Client;
         private List<NoahTask> TaskList = new List<NoahTask>();
@@ -24,8 +25,9 @@ namespace Noah.CLient
         public event EchoHandler MessageEvent;
         public event EchoHandler ErrorEvent;
 
-        public NoahClient(int port)
+        public NoahClient(int port, string workDir)
         {
+            WorkDir = workDir;
             Port = port;
             Guid = Guid.NewGuid();
             Init();
@@ -95,6 +97,8 @@ namespace Noah.CLient
                     case ClientEventType.task:
                         {
                             NoahTask task = JsonConvert.DeserializeObject<NoahTask>(eve.data);
+
+                            task.SetWorkspace(WorkDir);
 
                             NoahTask _task = (from t in TaskList
                                         where Equals(t.ID, task.ID)

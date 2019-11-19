@@ -20,6 +20,7 @@ namespace Noah.Commands
     {
         static NoahServer _instance;
         internal NoahClient Client = null;
+        internal string WorkDir;
 
         private int Port = 0;
 
@@ -71,6 +72,7 @@ namespace Noah.Commands
                 go.AddOption("Observer");
                 go.AddOptionInteger("Port", ref port);
                 go.AddOptionToggle("Editor", ref toggle);
+                go.AddOption("Workspace");
 
                 GetResult result = go.Get();
                 if (result != GetResult.Option) break;
@@ -87,11 +89,17 @@ namespace Noah.Commands
                         continue;
                     }
 
+                    if (WorkDir == null)
+                    {
+                        RhinoApp.WriteLine("Noah can not work without workspace!");
+                        continue;
+                    }
+
                     if (Client == null)
                     {
                         try
                         {
-                            Client = new NoahClient(Port);
+                            Client = new NoahClient(Port, WorkDir);
                             Client.MessageEvent += Client_MessageEvent;
                             Client.ErrorEvent += Client_ErrorEvent;
                         }
@@ -117,6 +125,11 @@ namespace Noah.Commands
 
                     if (Client != null) Client.Close();
                     break;
+                }
+
+                if (whereToGo == "Workspace")
+                {
+                    RhinoGet.GetString("Noah Workspace", false, ref WorkDir);
                 }
 
                 if (whereToGo == "Observer")

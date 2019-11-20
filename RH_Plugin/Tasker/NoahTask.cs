@@ -47,17 +47,18 @@ namespace Noah.Tasker
         {
             if (type == TaskType.Grasshopper)
             {
-                Platform platform = SystemPlatform.Get();
-                if (platform == Platform.Windows)
-                {
-                    Thread thread = new Thread(new ThreadStart(LoadGhDocument));
-                    thread.SetApartmentState(ApartmentState.STA); // 重点
-                    thread.Start();
-                }
-                if (platform == Platform.Mac)
-                {
-                    RhinoApp.InvokeOnUiThread(new Action(() => { LoadGhDocument(); }));
-                }
+                RhinoApp.InvokeOnUiThread(new Action(() => { LoadGhDocument(); }));
+                //Platform platform = SystemPlatform.Get();
+                //if (platform == Platform.Windows)
+                //{
+                //    Thread thread = new Thread(new ThreadStart(LoadGhDocument));
+                //    thread.SetApartmentState(ApartmentState.STA); // 重点
+                //    thread.Start();
+                //}
+                //if (platform == Platform.Mac)
+                //{
+                //    RhinoApp.InvokeOnUiThread(new Action(() => { LoadGhDocument(); }));
+                //}
             }
         }
 
@@ -209,43 +210,6 @@ namespace Noah.Tasker
 
                 // if (Equals(hook.VolatileData, m_data)) continue;
 
-                if (File.Exists(data.value.ToString()) && Path.GetExtension(data.value.ToString()) == ".noahdata")
-                {
-                    byte[] array;
-                    try
-                    {
-                        array = File.ReadAllBytes(data.value.ToString());
-                    }
-                    catch
-                    {
-                        continue;
-                    }
-                    GH_LooseChunk val = new GH_LooseChunk("Grasshopper Data");
-                    val.Deserialize_Binary(array);
-                    if (val.ItemCount == 0)
-                    {
-                        continue;
-                    }
-
-                    GH_Structure<IGH_Goo> gH_Structure = new GH_Structure<IGH_Goo>();
-                    GH_IReader val2 = val.FindChunk("Block", 0);
-
-                    bool boolean = val2.GetBoolean("Empty");
-
-                    if (boolean) continue;
-
-                    GH_IReader val3 = val2.FindChunk("Data");
-                    if (val3 == null)
-                    {
-                        continue;
-                    }
-                    else if (!gH_Structure.Read(val3))
-                    {
-                        continue;
-                    }
-                    m_data = gH_Structure;
-                }
-
                 hook.SetPlaceholderData(m_data);
 
                 if (!recomputeOnTheEnd) hook.ExpireSolution(true);
@@ -303,6 +267,47 @@ namespace Noah.Tasker
         private GH_Structure<IGH_Goo> SingleDataStructrue(object value)
         {
             GH_Structure<IGH_Goo> m_data = new GH_Structure<IGH_Goo>();
+
+            if (value is string path)
+            {
+                if (File.Exists(path) && Path.GetExtension(path) == ".noahdata")
+                {
+                    byte[] array;
+                    try
+                    {
+                        array = File.ReadAllBytes(path);
+                    }
+                    catch
+                    {
+                        return null;
+                    }
+                    GH_LooseChunk val = new GH_LooseChunk("Grasshopper Data");
+                    val.Deserialize_Binary(array);
+                    if (val.ItemCount == 0)
+                    {
+                        return null;
+                    }
+
+                    GH_Structure<IGH_Goo> gH_Structure = new GH_Structure<IGH_Goo>();
+                    GH_IReader val2 = val.FindChunk("Block", 0);
+
+                    bool boolean = val2.GetBoolean("Empty");
+
+                    if (boolean) return null;
+
+                    GH_IReader val3 = val2.FindChunk("Data");
+                    if (val3 == null)
+                    {
+                        return null;
+                    }
+                    else if (!gH_Structure.Read(val3))
+                    {
+                        return null;
+                    }
+                    
+                    return gH_Structure;
+                }
+            }
 
             GH_Number castNumber = null;
             GH_String castString = null;
@@ -437,7 +442,8 @@ namespace Noah.Tasker
 
                                 byte[] bytes = ghLooseChunk.Serialize_Binary();
 
-                                File.WriteAllBytes(fileName + ".noahdata", bytes);
+                                fileName += ".noahdata";
+                                File.WriteAllBytes(fileName, bytes);
 
                                 // TODO Store data
 

@@ -129,9 +129,16 @@ namespace Noah.Tasker
             
             //if (GhDocInit && SolutionEndCnt < dataList.Count - 1) return;
             //ErrorEvent(sender, SolutionEndCnt.ToString());
-            DoneEvent(sender, ID.ToString());
 
-            StoreOutput();
+            try
+            {
+                DoneEvent(sender, ID.ToString());
+
+                StoreOutput();
+            } catch (Exception ex)
+            {
+                ErrorEvent(sender, ex.Message);
+            }
         }
 
         public void BringToFront()
@@ -173,7 +180,7 @@ namespace Noah.Tasker
 
             if (match != null)
             {
-                if (match.value == taskData.value) return;
+                // if (match.value == taskData.value) return;
 
                 match.value = taskData.value;
                 match.name = taskData.name;

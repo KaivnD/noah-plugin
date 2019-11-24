@@ -58,12 +58,20 @@ namespace Noah.CLient
         private void Socket_OnClose(object sender, CloseEventArgs e)
         {
             MessageEvent(this, "Noah Client connecting is closed");
+            if (RetryCnt == MaxRetry) Exit();
             Reconnect();
+        }
+
+        public async void Exit()
+        {
+            ErrorEvent(this, "_(:_」∠)_ Could not connect to Noah Client, Rhino will exit in 5 second.");
+            // TODO Show confirm box
+            await Task.Delay(5000);
+            Rhino.RhinoApp.Exit();
         }
 
         public async void Reconnect()
         {
-            RetryCnt = 0;
             while (RetryCnt < MaxRetry)
             {
                 ++RetryCnt;
@@ -73,13 +81,13 @@ namespace Noah.CLient
 
                 if (Client.ReadyState == WebSocketState.Open) return;
 
-                await Task.Delay(300);
+                await Task.Delay(100);
             }
-            ErrorEvent(this, "Could not connect to Noah Client _(:_」∠)_");
         }
 
         private void Socket_OnOpen(object sender, EventArgs e)
         {
+            RetryCnt = 0;
         }
 
         private void Socket_OnError(object sender, ErrorEventArgs e)

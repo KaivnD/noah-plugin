@@ -118,18 +118,8 @@ namespace Noah.Tasker
             taskspace = Path.Combine(workspace, ".noah", "tasks");
         }
 
-        // private int SolutionEndCnt = 0;
-
         private void Doc_SolutionEnd(object sender, GH_SolutionEventArgs e)
         {
-            // TODO SolutionEnd 多次出发，(・∀・(・∀・(・∀・*)
-
-            //++SolutionEndCnt;
-            
-            
-            //if (GhDocInit && SolutionEndCnt < dataList.Count - 1) return;
-            //ErrorEvent(sender, SolutionEndCnt.ToString());
-
             try
             {
                 DoneEvent(sender, ID.ToString());
@@ -395,7 +385,6 @@ namespace Noah.Tasker
 
                                 string csv = string.Join(Environment.NewLine, sList);
 
-                                // TODO Store CSV
                                 fileName += ".csv";
                                 File.WriteAllText(fileName, csv);
 
@@ -451,8 +440,6 @@ namespace Noah.Tasker
 
                                 fileName += ".noahdata";
                                 File.WriteAllBytes(fileName, bytes);
-
-                                // TODO Store data
 
                                 break;
                             }

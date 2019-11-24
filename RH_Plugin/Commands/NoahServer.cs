@@ -51,13 +51,6 @@ namespace Noah.Commands
                 return Result.Cancel;
             }
 
-            Grasshopper.DisableBanner();
-
-            if (!Grasshopper.IsEditorLoaded())
-            {
-                Grasshopper.LoadEditor();
-            }
-
             GetOption go = null;
             while (true)
             {
@@ -99,6 +92,13 @@ namespace Noah.Commands
                     {
                         try
                         {
+                            Grasshopper.DisableBanner();
+
+                            if (!Grasshopper.IsEditorLoaded())
+                            {
+                                Grasshopper.LoadEditor();
+                            }
+
                             Client = new NoahClient(Port, WorkDir);
                             Client.MessageEvent += Client_MessageEvent;
                             Client.ErrorEvent += Client_ErrorEvent;

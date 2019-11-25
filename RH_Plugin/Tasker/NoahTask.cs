@@ -386,7 +386,7 @@ namespace Noah.Tasker
                                 string csv = string.Join(Environment.NewLine, sList);
 
                                 fileName += ".csv";
-                                File.WriteAllText(fileName, csv);
+                                File.WriteAllText(fileName, csv, Encoding.UTF8);
 
                                 break;
                             }

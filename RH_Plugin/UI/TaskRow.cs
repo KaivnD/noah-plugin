@@ -20,9 +20,29 @@ namespace Noah.UI
             EndHorizontal();
             EndVertical();
 
+            var detailMenu = new ButtonMenuItem
+            {
+                Text = "Test"
+            };
+
+            detailMenu.Click += DetailMenu_Click;
+
+            var menu = new ContextMenu(new MenuItem[] 
+            {
+                detailMenu
+            });
+
+            ContextMenu = menu;
+
             MouseEnter += TaskRow_MouseEnter;
             MouseLeave += TaskRow_MouseLeave;
             MouseDoubleClick += TaskRow_MouseDoubleClick;
+        }
+
+        private void DetailMenu_Click(object sender, EventArgs e)
+        {
+            // TO DO 展示这条记录的数据表格
+            MessageBox.Show("展示这条记录的数据表格");
         }
 
         private void TaskRow_MouseDoubleClick(object sender, MouseEventArgs e)

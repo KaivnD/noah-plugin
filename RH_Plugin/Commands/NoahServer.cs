@@ -15,6 +15,8 @@ using Rhino.DocObjects;
 using Rhino.Input;
 using Rhino.Input.Custom;
 using WebSocketSharp;
+using Eto.Forms;
+using Command = Rhino.Commands.Command;
 
 namespace Noah.Commands
 {
@@ -44,23 +46,22 @@ namespace Noah.Commands
             get { return "NoahServer"; }
         }
 
-        public LoggerPanel logger { get; private set; }
+        public LoggerPanel Logger { get; private set; }
 
         protected override Result RunCommand(RhinoDoc doc, RunMode mode)
         {
             try
             {
-                if (logger == null) Panels.OpenPanel(LoggerPanel.PanelId);
-                logger = Panels.GetPanel<LoggerPanel>(doc);
+                if (Logger == null) Panels.OpenPanel(LoggerPanel.PanelId);
+                Logger = Panels.GetPanel<LoggerPanel>(doc);
             }
             catch (Exception ex)
             {
                 RhinoApp.WriteLine("Error: " + ex.Message);
             }
 
-            GH_RhinoScriptInterface Grasshopper = RhinoApp.GetPlugInObject("Grasshopper") as GH_RhinoScriptInterface;
 
-            if (Grasshopper == null)
+            if (!(RhinoApp.GetPlugInObject("Grasshopper") is GH_RhinoScriptInterface Grasshopper))
             {
                 return Result.Cancel;
             }
@@ -173,17 +174,18 @@ namespace Noah.Commands
 
         private void Client_WarningEvent(object sender, string message)
         {
-            logger.Warning(message);
+            Logger.Warning(message);
         }
 
         private void Client_ErrorEvent(object sender, string message)
         {
-            logger.Error(message);
+            Logger.Error(message);
         }
 
         private void Client_MessageEvent(object sender, string message)
         {
-            logger.Info(message);
+            
+            Logger.Info(message);
         }
     }
 }

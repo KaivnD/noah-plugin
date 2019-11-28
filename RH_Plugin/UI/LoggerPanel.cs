@@ -24,14 +24,11 @@ namespace Noah.UI
     {
         public static Guid PanelId => typeof(LoggerPanel).GUID;
 
-        private readonly uint m_document_sn;
         private GridView StackGrid { get; set; }
         private ObservableCollection<Log> Logs { get; set; }
 
         public LoggerPanel(uint documentSerialNumber)
         {
-            m_document_sn = documentSerialNumber;
-
             Logs = new ObservableCollection<Log>();
 
             StackGrid = new GridView()
@@ -78,7 +75,21 @@ namespace Noah.UI
                 Content = StackGrid
             };
 
+            var clearBtn = new ButtonMenuItem
+            {
+                Text = "CLear"
+            };
+
+            clearBtn.Click += ClearBtn_Click;
+
+            ContextMenu = new ContextMenu(new MenuItem[] { clearBtn });
+
             Info("Noah Logger initialize complete");
+        }
+
+        private void ClearBtn_Click(object sender, EventArgs e)
+        {
+            RhinoApp.InvokeOnUiThread(new Action(() => Logs.Clear()));
         }
 
         public void Info(string msg)

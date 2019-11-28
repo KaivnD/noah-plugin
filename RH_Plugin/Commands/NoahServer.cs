@@ -114,8 +114,9 @@ namespace Noah.Commands
                             }
 
                             Client = new NoahClient(Port, WorkDir);
-                            Client.MessageEvent += Client_MessageEvent;
+                            Client.InfoEvent += Client_MessageEvent;
                             Client.ErrorEvent += Client_ErrorEvent;
+                            Client.WarningEvent += Client_WarningEvent;
                         }
                         catch (Exception ex)
                         {
@@ -168,6 +169,11 @@ namespace Noah.Commands
             }
 
             return Result.Nothing;
+        }
+
+        private void Client_WarningEvent(object sender, string message)
+        {
+            logger.Warning(message);
         }
 
         private void Client_ErrorEvent(object sender, string message)

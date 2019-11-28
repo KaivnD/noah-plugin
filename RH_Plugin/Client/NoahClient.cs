@@ -2,6 +2,7 @@
 using Newtonsoft.Json.Linq;
 using Noah.Tasker;
 using Noah.UI;
+using Noah.Utils;
 using Rhino;
 using Rhino.UI;
 using System;
@@ -24,9 +25,9 @@ namespace Noah.CLient
         private int RetryCnt = 0;
         private int MaxRetry = 5;
 
-        public delegate void EchoHandler(object sender, string message);
-        public event EchoHandler MessageEvent;
-        public event EchoHandler ErrorEvent;
+        public event InfoHandler InfoEvent;
+        public event ErrorHandler ErrorEvent;
+        public event WarningHandler WarningEvent;
 
         private HistoryPanel HistoryPanel { get; set; }
 
@@ -63,7 +64,7 @@ namespace Noah.CLient
 
         private void Socket_OnClose(object sender, CloseEventArgs e)
         {
-            MessageEvent(this, "Noah Client connecting is closed");
+            WarningEvent(this, "Noah Client connecting is closed");
             if (RetryCnt == MaxRetry) Exit();
             Reconnect();
         }
@@ -82,7 +83,7 @@ namespace Noah.CLient
             {
                 ++RetryCnt;
 
-                MessageEvent(this, "Retrying to connect Noah Client " + RetryCnt + " times.");
+                WarningEvent(this, "Retrying to connect Noah Client " + RetryCnt + " times.");
                 Connect();
 
                 if (Client.ReadyState == WebSocketState.Open) return;
@@ -125,12 +126,9 @@ namespace Noah.CLient
 
                         TaskList.Add(task);
 
-                        MessageEvent(this, string.Format("{0}({1}) 已加载", task.name, task.ID.ToString().Split('-')[0]));
+                        InfoEvent(this, string.Format("{0}({1}) 已加载", task.name, task.ID.ToString().Split('-')[0]));
 
-                        task.ErrorEvent += (sd, msg) =>
-                        {
-                            MessageEvent(sd, msg);
-                        };
+                        task.ErrorEvent += (sd, msg) => ErrorEvent(sd, msg);
 
                         task.DoneEvent += (sd, id) =>
                         {
@@ -154,7 +152,7 @@ namespace Noah.CLient
                             HistoryPanel = Panels.GetPanel<HistoryPanel>(RhinoDoc.ActiveDoc);
                             HistoryPanel.AddHistory(noahTask.name, noahTask.history.Last());
 
-                            MessageEvent(noahTask, string.Format("{0} 完成", noahTask.name));
+                            InfoEvent(noahTask, string.Format("{0} 完成", noahTask.name));
                         };
 
                         task.InfoEvent += (sd, json) =>
@@ -184,7 +182,7 @@ namespace Noah.CLient
 
                             TaskList.Add(task);
 
-                            MessageEvent(this, task.ID + " is loaded!");
+                            InfoEvent(this, task.ID + " is loaded!");
 
                             task.Run();
                         });
@@ -192,7 +190,7 @@ namespace Noah.CLient
                     }
                 case ClientEventType.message:
                     {
-                        MessageEvent(this, eve.data);
+                        InfoEvent(this, eve.data);
                         break;
                     }
                 case ClientEventType.data:

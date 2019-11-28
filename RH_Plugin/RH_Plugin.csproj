@@ -93,6 +93,7 @@
     <Compile Include="UI\LoggerPanel.cs" />
     <Compile Include="UI\LoggerRow.cs" />
     <Compile Include="UI\TestDialog.cs" />
+    <Compile Include="Utils\EventHandler.cs" />
     <Compile Include="Utils\File3dmWriter.cs" />
     <Compile Include="Utils\Platform.cs" />
     <Compile Include="UI\TaskHistory.cs" />

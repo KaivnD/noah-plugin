@@ -8,17 +8,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Eto.Drawing;
-using Noah.Properties;
 using System.IO;
 
 namespace Noah.UI
 {
-    public enum LogLevel
-    {
-        Info,
-        Warning,
-        Error
-    }
     public class Log
     {
         public Image LogLevel { get; set; }
@@ -95,6 +88,16 @@ namespace Noah.UI
                 Ts = DateTime.Now.ToString("[MM/dd HH:mm:ss]"),
                 Text = msg,
                 LogLevel = EtoExtensions.ToEto(DrawLevelIcon(System.Drawing.Color.Green))
+            })));
+        }
+
+        public void Warning(string msg)
+        {
+            RhinoApp.InvokeOnUiThread(new Action(() => Logs.Add(new Log
+            {
+                Ts = DateTime.Now.ToString("[MM/dd HH:mm:ss]"),
+                Text = msg,
+                LogLevel = EtoExtensions.ToEto(DrawLevelIcon(System.Drawing.Color.Yellow))
             })));
         }
 

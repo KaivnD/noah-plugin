@@ -3,12 +3,9 @@ using Grasshopper;
 using Grasshopper.GUI.Canvas;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Data;
-using Grasshopper.Kernel.Parameters;
 using Grasshopper.Kernel.Special;
 using Grasshopper.Kernel.Types;
-using Grasshopper.Plugin;
 using Newtonsoft.Json.Linq;
-using Noah.UI;
 using Noah.Utils;
 using Rhino;
 using Rhino.Display;
@@ -20,8 +17,6 @@ using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 namespace Noah.Tasker
 {
     public class NoahTask
@@ -41,11 +36,10 @@ namespace Noah.Tasker
 
         public string ticket { set; get; }
 
-        public delegate void EchoHandler(object sender, string message);
-
-        public event EchoHandler ErrorEvent;
-        public event EchoHandler DoneEvent;
-        public event EchoHandler InfoEvent;
+        public event ErrorHandler ErrorEvent;
+        public event InfoHandler DoneEvent;
+        public event InfoHandler InfoEvent;
+        public event WarningHandler WarningEvent;
 
         public NoahTask()
         {
@@ -443,7 +437,6 @@ namespace Noah.Tasker
                     case "3DM":
                         {
                             fileName += ".3dm";
-                            ErrorEvent(this, fileName);
 
                             File3dmWriter writer = new File3dmWriter(fileName);
 
@@ -452,7 +445,7 @@ namespace Noah.Tasker
                                 GeometryBase obj = GH_Convert.ToGeometryBase(data);
                                 if (obj == null)
                                 {
-                                    ErrorEvent(this, data.TypeName);
+                                    WarningEvent(this, data.TypeName + "不能转换成GeometryBase");
                                     continue;
                                 }
 

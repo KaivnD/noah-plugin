@@ -1,6 +1,9 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Noah.Tasker;
+using Noah.UI;
+using Rhino;
+using Rhino.UI;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -25,11 +28,14 @@ namespace Noah.CLient
         public event EchoHandler MessageEvent;
         public event EchoHandler ErrorEvent;
 
+        private HistoryPanel HistoryPanel { get; set; }
+
         public NoahClient(int port, string workDir)
         {
             WorkDir = workDir;
             Port = port;
             Guid = Guid.NewGuid();
+
             Init();
         }
 
@@ -97,110 +103,122 @@ namespace Noah.CLient
 
         private void Socket_OnMessage(object sender, MessageEventArgs e)
         {
-            try
+            ClientEventArgs eve = JsonConvert.DeserializeObject<ClientEventArgs>(e.Data);
+            switch (eve.route)
             {
-                ClientEventArgs eve = JsonConvert.DeserializeObject<ClientEventArgs>(e.Data);
-                switch (eve.route)
-                {
-                    case ClientEventType.task:
+                case ClientEventType.task:
+                    {
+                        NoahTask task = JsonConvert.DeserializeObject<NoahTask>(eve.data);
+
+                        task.SetWorkspace(WorkDir);
+
+                        NoahTask _task = (from t in TaskList
+                                    where Equals(t.ID, task.ID)
+                                    select t).FirstOrDefault();
+
+                        if (_task != null)
                         {
-                            NoahTask task = JsonConvert.DeserializeObject<NoahTask>(eve.data);
+                            ErrorEvent(this, "This task is already running!");
+                            _task.BringToFront();
+                            break;
+                        }
 
-                            task.SetWorkspace(WorkDir);
+                        TaskList.Add(task);
 
+                        MessageEvent(this, string.Format("{0}({1}) 已加载", task.name, task.ID.ToString().Split('-')[0]));
+
+                        task.ErrorEvent += (sd, msg) =>
+                        {
+                            MessageEvent(sd, msg);
+                        };
+
+                        task.DoneEvent += (sd, id) =>
+                        {
+                            var obj = new JObject
+                            {
+                                ["route"] = "task-end",
+                                ["id"] = id
+                            };
+                            Client.Send(obj.ToString());
+
+                            if (!(sd is NoahTask noahTask)) return;
+
+                            if(noahTask.history.Count < 1)
+                            {
+                                ErrorEvent(this, string.Format("{0} 没有历史", noahTask.name));
+                                return;
+                            }
+
+                            if (HistoryPanel == null) Panels.OpenPanel(HistoryPanel.PanelId);
+
+                            HistoryPanel = Panels.GetPanel<HistoryPanel>(RhinoDoc.ActiveDoc);
+                            HistoryPanel.AddHistory(noahTask.name, noahTask.history.Last());
+
+                            MessageEvent(noahTask, string.Format("{0} 完成", noahTask.name));
+                        };
+
+                        task.InfoEvent += (sd, json) =>
+                        {
+                            Client.Send(json);
+                        };
+
+                        task.Run();
+
+                        break;
+                    }
+                case ClientEventType.group:
+                    {
+                        TaskGroup group = JsonConvert.DeserializeObject<TaskGroup>(eve.data);
+
+                        group.tasks.ForEach(task =>
+                        {
                             NoahTask _task = (from t in TaskList
-                                        where Equals(t.ID, task.ID)
-                                        select t).FirstOrDefault();
+                                                where Equals(t.ID, task.ID)
+                                                select t).FirstOrDefault();
 
                             if (_task != null)
                             {
                                 ErrorEvent(this, "This task is already running!");
                                 _task.BringToFront();
-                                break;
                             }
 
                             TaskList.Add(task);
 
                             MessageEvent(this, task.ID + " is loaded!");
 
-                            task.ErrorEvent += (sd, msg) =>
-                            {
-                                MessageEvent(sd, msg);
-                            };
-
-                            task.DoneEvent += (sd, id) =>
-                            {
-                                var obj = new JObject
-                                {
-                                    ["route"] = "task-end",
-                                    ["id"] = id
-                                };
-                                Client.Send(obj.ToString());
-                            };
-
-                            task.InfoEvent += (sd, json) =>
-                            {
-                                Client.Send(json);
-                            };
-
                             task.Run();
-
-                            break;
-                        }
-                    case ClientEventType.group:
-                        {
-                            TaskGroup group = JsonConvert.DeserializeObject<TaskGroup>(eve.data);
-
-                            group.tasks.ForEach(task =>
-                            {
-                                NoahTask _task = (from t in TaskList
-                                                  where Equals(t.ID, task.ID)
-                                                  select t).FirstOrDefault();
-
-                                if (_task != null)
-                                {
-                                    ErrorEvent(this, "This task is already running!");
-                                    _task.BringToFront();
-                                }
-
-                                TaskList.Add(task);
-
-                                MessageEvent(this, task.ID + " is loaded!");
-
-                                task.Run();
-                            });
-                            break;
-                        }
-                    case ClientEventType.message:
-                        {
-                            MessageEvent(this, eve.data);
-                            break;
-                        }
-                    case ClientEventType.data:
-                        {
-                            TaskData taskData = JsonConvert.DeserializeObject<TaskData>(eve.data);
-
-                            NoahTask task = (from t in TaskList
-                                              where Equals(t.ID, taskData.ID)
-                                              select t).FirstOrDefault();
-
-                            if (task == null)
-                            {
-                                ErrorEvent(this, "This task is not running!");
-                                break;
-                            }
-
-                            task.SetData(taskData);
-
-                            break;
-                        }
-                    default:
+                        });
                         break;
-                }
-            } catch (Exception ex)
-            {
-                ErrorEvent(this, ex.Message);
-                ErrorEvent(this, e.Data);
+                    }
+                case ClientEventType.message:
+                    {
+                        MessageEvent(this, eve.data);
+                        break;
+                    }
+                case ClientEventType.data:
+                    {
+                        TaskData taskData = JsonConvert.DeserializeObject<TaskData>(eve.data);
+
+                        NoahTask task = (from t in TaskList
+                                            where Equals(t.ID, taskData.ID)
+                                            select t).FirstOrDefault();
+
+                        if (task == null)
+                        {
+                            ErrorEvent(this, "This task is not running!");
+                            break;
+                        }
+
+                        task.SetData(taskData);
+
+                        break;
+                    }
+                case ClientEventType.pick:
+                    {
+                        break;
+                    }
+                default:
+                    break;
             }
         }
     }
@@ -216,6 +234,7 @@ namespace Noah.CLient
         message,
         task,
         data,
-        group
+        group,
+        pick
     }
 }

@@ -12,6 +12,8 @@ namespace Noah.UI
 
         public Guid TaskID;
 
+        private bool folded;
+
         public TaskHistory(string name, Guid id)
         {
             TaskID = id;
@@ -22,6 +24,16 @@ namespace Noah.UI
             };
             Text = name;
             Size = new Size(-1, -1);
+
+            MouseDoubleClick += TaskHistory_MouseDoubleClick;
+        }
+
+        private void TaskHistory_MouseDoubleClick(object sender, MouseEventArgs e)
+        {
+            if (!folded) Content = null;
+            else Content = TaskRows;
+
+            folded = !folded;
         }
 
         public void AddRow (TaskRow task)

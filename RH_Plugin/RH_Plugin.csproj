@@ -76,6 +76,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Client\Picker.cs" />
     <Compile Include="Commands\Load3dm.cs" />
     <Compile Include="Noah.cs" />
     <Compile Include="Client\NoahClient.cs" />
@@ -86,9 +87,16 @@
     <Compile Include="Tasker\TaskContentType.cs" />
     <Compile Include="Tasker\TaskData.cs" />
     <Compile Include="Tasker\TaskGroup.cs" />
+    <Compile Include="Tasker\TaskRecord.cs" />
     <Compile Include="Tasker\TaskType.cs" />
+    <Compile Include="UI\HistoryPanel.cs" />
+    <Compile Include="UI\LoggerPanel.cs" />
+    <Compile Include="UI\LoggerRow.cs" />
+    <Compile Include="UI\TestDialog.cs" />
     <Compile Include="Utils\File3dmWriter.cs" />
     <Compile Include="Utils\Platform.cs" />
+    <Compile Include="UI\TaskHistory.cs" />
+    <Compile Include="UI\TaskRow.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="EmbeddedResources\plugin-utility.ico" />

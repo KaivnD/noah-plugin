@@ -6,8 +6,10 @@ using Grasshopper.GUI.Canvas;
 using Grasshopper.Kernel;
 using Grasshopper.Plugin;
 using Noah.CLient;
+using Noah.UI;
 using Noah.Utils;
 using Rhino;
+using Rhino.UI;
 using Rhino.Commands;
 using Rhino.DocObjects;
 using Rhino.Input;
@@ -42,9 +44,21 @@ namespace Noah.Commands
             get { return "NoahServer"; }
         }
 
+        public LoggerPanel logger { get; private set; }
+
         protected override Result RunCommand(RhinoDoc doc, RunMode mode)
         {
-            var Grasshopper = RhinoApp.GetPlugInObject("Grasshopper") as GH_RhinoScriptInterface;
+            try
+            {
+                if (logger == null) Panels.OpenPanel(LoggerPanel.PanelId);
+                logger = Panels.GetPanel<LoggerPanel>(doc);
+            }
+            catch (Exception ex)
+            {
+                RhinoApp.WriteLine("Error: " + ex.Message);
+            }
+
+            GH_RhinoScriptInterface Grasshopper = RhinoApp.GetPlugInObject("Grasshopper") as GH_RhinoScriptInterface;
 
             if (Grasshopper == null)
             {
@@ -158,12 +172,12 @@ namespace Noah.Commands
 
         private void Client_ErrorEvent(object sender, string message)
         {
-            RhinoApp.WriteLine("Error: " + message);
+            logger.Info(message);
         }
 
         private void Client_MessageEvent(object sender, string message)
         {
-            RhinoApp.WriteLine(message);
+            logger.Info(message);
         }
     }
 }

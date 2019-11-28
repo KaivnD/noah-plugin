@@ -363,7 +363,7 @@ namespace Noah.Tasker
             return m_data;
         }
 
-        private SortedDictionary<string, string> ConvertUrlParam(string param)
+        public static SortedDictionary<string, string> ConvertUrlParam(string param)
         {
             SortedDictionary<string, string> configMap = new SortedDictionary<string, string>();
 

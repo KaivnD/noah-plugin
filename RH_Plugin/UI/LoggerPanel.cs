@@ -7,11 +7,21 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Eto.Drawing;
+using Noah.Properties;
+using System.IO;
 
 namespace Noah.UI
 {
-    class Log
+    public enum LogLevel
     {
+        Info,
+        Warning,
+        Error
+    }
+    public class Log
+    {
+        public Image LogLevel { get; set; }
         public string Text { get; set; }
 
         public string Ts { get; set; }
@@ -36,6 +46,17 @@ namespace Noah.UI
                 ShowHeader = false,
                 DataStore = Logs
             };
+
+            StackGrid.Columns.Add(new GridColumn()
+            {
+                HeaderText = "Level",
+                Width = 12,
+                Editable = false,
+                DataCell = new ImageViewCell
+                {
+                    Binding = Binding.Delegate((Log m) => m.LogLevel)
+                }
+            }) ;
 
             StackGrid.Columns.Add(new GridColumn()
             {
@@ -69,13 +90,38 @@ namespace Noah.UI
 
         public void Info(string msg)
         {
-            RhinoApp.InvokeOnUiThread(new Action(() => { Update(msg); }));
+            RhinoApp.InvokeOnUiThread(new Action(() => Logs.Add(new Log
+            {
+                Ts = DateTime.Now.ToString("[MM/dd HH:mm:ss]"),
+                Text = msg,
+                LogLevel = EtoExtensions.ToEto(DrawLevelIcon(System.Drawing.Color.Green))
+            })));
         }
 
-        private void Update(string msg)
+        public void Error(string msg)
         {
-            Logs.Add(new Log { Ts = DateTime.Now.ToString("[MM/dd HH:mm:ss]"), Text = msg });
+            RhinoApp.InvokeOnUiThread(new Action(() => Logs.Add(new Log
+            {
+                Ts = DateTime.Now.ToString("[MM/dd HH:mm:ss]"),
+                Text = msg,
+                LogLevel = EtoExtensions.ToEto(DrawLevelIcon(System.Drawing.Color.Red))
+            })));
         }
+
+        public System.Drawing.Bitmap DrawLevelIcon (System.Drawing.Color color)
+        {
+            System.Drawing.Bitmap bitmap = new System.Drawing.Bitmap(12, 12);
+            System.Drawing.Graphics g = System.Drawing.Graphics.FromImage(bitmap);
+            g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
+            System.Drawing.Brush bush = new System.Drawing.SolidBrush(color);
+            g.FillEllipse(bush, 1, 1, 10, 10);
+            g.Save();
+            g.Dispose();
+            bitmap.MakeTransparent(System.Drawing.Color.Transparent);
+
+            return bitmap;
+        }
+
 
         public void PanelClosing(uint documentSerialNumber, bool onCloseDocument)
         {

@@ -15,13 +15,19 @@ namespace Noah.UI
             Size = new Size(-1, -1);
             BeginVertical(); // buttons section
             BeginHorizontal();
-            Add(new ImageView() { Image = Rhino.UI.EtoExtensions.ToEto(view.CaptureToBitmap(new System.Drawing.Size(160, 90)))});
+            Add(new ImageView() { Image = Rhino.UI.EtoExtensions.ToEto(view.CaptureToBitmap(new System.Drawing.Size(120, 90)))});
             Add(new Label() { Text = name }) ;
             EndHorizontal();
             EndVertical();
 
             MouseEnter += TaskRow_MouseEnter;
             MouseLeave += TaskRow_MouseLeave;
+            MouseDoubleClick += TaskRow_MouseDoubleClick;
+        }
+
+        private void TaskRow_MouseDoubleClick(object sender, MouseEventArgs e)
+        {
+            MessageBox.Show("123");
         }
 
         private void TaskRow_MouseLeave(object sender, MouseEventArgs e)
@@ -31,7 +37,7 @@ namespace Noah.UI
 
         private void TaskRow_MouseEnter(object sender, MouseEventArgs e)
         {
-            BackgroundColor = Colors.Silver;
+            BackgroundColor = Color.FromArgb(0, 0, 0, 100);
         }
     }
 }

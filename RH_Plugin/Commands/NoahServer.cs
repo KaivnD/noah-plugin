@@ -172,7 +172,7 @@ namespace Noah.Commands
 
         private void Client_ErrorEvent(object sender, string message)
         {
-            logger.Info(message);
+            logger.Error(message);
         }
 
         private void Client_MessageEvent(object sender, string message)

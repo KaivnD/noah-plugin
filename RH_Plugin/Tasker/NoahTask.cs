@@ -8,8 +8,10 @@ using Grasshopper.Kernel.Special;
 using Grasshopper.Kernel.Types;
 using Grasshopper.Plugin;
 using Newtonsoft.Json.Linq;
+using Noah.UI;
 using Noah.Utils;
 using Rhino;
+using Rhino.Display;
 using Rhino.DocObjects;
 using Rhino.Geometry;
 using System;
@@ -24,12 +26,14 @@ namespace Noah.Tasker
 {
     public class NoahTask
     {
-
+        public string name { get; set; }
         public Guid ID { get; set; }
         public TaskType type { get; set; }
         public TaskContent content { get; set; }
         public List<TaskData> dataList { get; set; }
         public List<TaskData> results { get; }
+
+        public List<TaskRecord> history;
 
         public string workspace { set; get; }
 
@@ -43,22 +47,23 @@ namespace Noah.Tasker
         public event EchoHandler DoneEvent;
         public event EchoHandler InfoEvent;
 
+        public NoahTask()
+        {
+            try
+            {
+                history = new List<TaskRecord>();
+            }
+            catch
+            {
+                ErrorEvent(this, "无法初始化任务历史记录");
+            }
+        }
+
         public void Run()
         {
             if (type == TaskType.Grasshopper)
             {
                 RhinoApp.InvokeOnUiThread(new Action(() => { LoadGhDocument(); }));
-                //Platform platform = SystemPlatform.Get();
-                //if (platform == Platform.Windows)
-                //{
-                //    Thread thread = new Thread(new ThreadStart(LoadGhDocument));
-                //    thread.SetApartmentState(ApartmentState.STA); // 重点
-                //    thread.Start();
-                //}
-                //if (platform == Platform.Mac)
-                //{
-                //    RhinoApp.InvokeOnUiThread(new Action(() => { LoadGhDocument(); }));
-                //}
             }
         }
 
@@ -122,12 +127,50 @@ namespace Noah.Tasker
         {
             try
             {
-                DoneEvent(sender, ID.ToString());
-
                 StoreOutput();
-            } catch (Exception ex)
+                Zoom();
+            } catch(Exception ex)
             {
                 ErrorEvent(sender, ex.Message);
+            } finally
+            {
+                DoneEvent(this, ID.ToString());
+            }
+        }
+
+        private void Zoom()
+        {
+            var canvas = Instances.ActiveCanvas;
+            if (canvas == null) return;
+            if (!canvas.IsDocument) return;
+            List<IGH_DocumentObject> ghDocumentObjectList = canvas.Document.EnabledObjects();
+            if (ghDocumentObjectList == null || ghDocumentObjectList.Count == 0)
+                return;
+            BoundingBox bbox = BoundingBox.Empty;
+            List<IGH_DocumentObject>.Enumerator enumerator1 = ghDocumentObjectList.GetEnumerator();
+            try
+            {
+                while (enumerator1.MoveNext())
+                {
+                    IGH_PreviewObject current = enumerator1.Current as IGH_PreviewObject;
+                    if (current != null)
+                    {
+                        BoundingBox clippingBox = current.ClippingBox;
+                        if (clippingBox.IsValid)
+                            bbox.Union(clippingBox);
+                    }
+                }
+            }
+            finally
+            {
+                enumerator1.Dispose();
+            }
+            if (!bbox.IsValid)
+                return;
+
+            foreach(RhinoView view in RhinoDoc.ActiveDoc.Views)
+            {
+                view.ActiveViewport.ZoomBoundingBox(bbox);
             }
         }
 
@@ -182,6 +225,8 @@ namespace Noah.Tasker
         private void UpdateData(bool recomputeOnTheEnd)
         {
             if (dataList.Count == 0 || dataList == null) return;
+
+            history.Add(new TaskRecord() { ID = ID , date = DateTime.Now, dataList = dataList });
 
             GH_DocumentServer doc_server = Instances.DocumentServer;
 
@@ -348,114 +393,117 @@ namespace Noah.Tasker
         {
             GH_DocumentServer doc_server = Instances.DocumentServer;
 
-            if (doc_server == null)
-            {
-                ErrorEvent(this, "No Document Server exist!");
-                return;
-            }
+            if (doc_server == null) throw new Exception("No Document Server exist!");
 
             GH_Document doc = doc_server.ToList().Find(x => x.Properties.ProjectFileName == ID.ToString());
 
-            if (doc == null) return;
+            if (doc == null) throw new Exception("Tasker 未找到GH_Document");
 
-            var hooks = doc.ClusterOutputHooks();
+            if (string.IsNullOrEmpty(workspace) || string.IsNullOrEmpty(ticket)) throw new Exception("工作目录和Ticket为空");
 
             string outDir = Path.Combine(taskspace, ID.ToString(), ticket);
+
+            var hooks = doc.ClusterOutputHooks();
+            if (hooks == null) return;
 
             foreach (var hook in hooks)
             {
                 string info = hook.CustomDescription;
+                if (string.IsNullOrEmpty(info)) continue;
                 var paraMap = ConvertUrlParam(info);
+
+                if (!paraMap.TryGetValue("Index", out string index)
+                    || !paraMap.TryGetValue("Type", out string type)) continue;
+
+                string fileName = Path.Combine(outDir, index);
+
                 var volatileData = hook.VolatileData;
-                if (paraMap.TryGetValue("Index", out string index)
-                    && paraMap.TryGetValue("Type", out string type))
+
+                if (volatileData.IsEmpty) continue;
+
+                switch (type)
                 {
-                    string fileName = Path.Combine(outDir, index);
-                    switch (type)
-                    {
-                        case "CSV":
+                    case "CSV":
+                        {
+                            var allData = volatileData.AllData(true);
+                            List<string> sList = new List<string>();
+                            allData.ToList().ForEach(el =>
                             {
-                                var allData = volatileData.AllData(true);
-                                List<string> sList = new List<string>();
-                                allData.ToList().ForEach(el =>
-                                {
-                                    GH_Convert.ToString(el, out string tmp, GH_Conversion.Both);
-                                    sList.Add(tmp);
-                                });
+                                GH_Convert.ToString(el, out string tmp, GH_Conversion.Both);
+                                sList.Add(tmp);
+                            });
 
-                                string csv = string.Join(Environment.NewLine, sList);
+                            string csv = string.Join(Environment.NewLine, sList);
 
-                                fileName += ".csv";
-                                File.WriteAllText(fileName, csv, Encoding.UTF8);
+                            fileName += ".csv";
+                            File.WriteAllText(fileName, csv, Encoding.UTF8);
 
-                                break;
-                            }
-                        case "3DM":
-                            {
-                                fileName += ".3dm";
-                                ErrorEvent(this, fileName);
-
-                                File3dmWriter writer = new File3dmWriter(fileName);
-
-                                foreach (var data in volatileData.AllData(true))
-                                {
-                                    GeometryBase obj = GH_Convert.ToGeometryBase(data);
-                                    if (obj == null)
-                                    {
-                                        ErrorEvent(this, data.TypeName);
-                                        continue;
-                                    }
-
-                                    string layer = obj.GetUserString("Layer");
-                                    if (layer == null) continue;
-                                    ObjectAttributes att = new ObjectAttributes
-                                    {
-                                        LayerIndex = writer.GetLayer(layer, Color.Black)
-                                    };
-
-                                    writer.ObjectMap.Add(att, obj);
-                                }
-
-                                writer.Write();
-
-                                break;
-                            }
-                        case "Data":
-                            {
-                                GH_LooseChunk ghLooseChunk = new GH_LooseChunk("Grasshopper Data");
-                                ghLooseChunk.SetGuid("OriginId", this.ID);
-
-                                GH_IWriter chunk = ghLooseChunk.CreateChunk("Block", 0);
-                                chunk.SetString("Name", hook.CustomNickName);
-                                chunk.SetBoolean("Empty", volatileData.IsEmpty);
-                                if (!volatileData.IsEmpty)
-                                {
-                                    GH_Structure<IGH_Goo> tree = volatileData as GH_Structure<IGH_Goo>;
-
-                                    if (!tree.Write(chunk.CreateChunk("Data")))
-                                        ErrorEvent(ghLooseChunk, string.Format("There was a problem writing the {0} data.", (object)hook.CustomNickName));
-                                }
-
-                                byte[] bytes = ghLooseChunk.Serialize_Binary();
-
-                                fileName += ".noahdata";
-                                File.WriteAllBytes(fileName, bytes);
-
-                                break;
-                            }
-                        default:
                             break;
-                    }
+                        }
+                    case "3DM":
+                        {
+                            fileName += ".3dm";
+                            ErrorEvent(this, fileName);
 
-                    InfoEvent(this, new JObject
-                    {
-                        ["route"] = "task-stored",
-                        ["id"] = ID.ToString(),
-                        ["index"] = index.ToString(),
-                        ["path"] = fileName
-                    }.ToString());
+                            File3dmWriter writer = new File3dmWriter(fileName);
+
+                            foreach (var data in volatileData.AllData(true))
+                            {
+                                GeometryBase obj = GH_Convert.ToGeometryBase(data);
+                                if (obj == null)
+                                {
+                                    ErrorEvent(this, data.TypeName);
+                                    continue;
+                                }
+
+                                string layer = obj.GetUserString("Layer");
+                                if (layer == null) continue;
+                                ObjectAttributes att = new ObjectAttributes
+                                {
+                                    LayerIndex = writer.GetLayer(layer, Color.Black)
+                                };
+
+                                writer.ObjectMap.Add(att, obj);
+                            }
+
+                            writer.Write();
+
+                            break;
+                        }
+                    case "Data":
+                        {
+                            GH_LooseChunk ghLooseChunk = new GH_LooseChunk("Grasshopper Data");
+                            ghLooseChunk.SetGuid("OriginId", this.ID);
+
+                            GH_IWriter chunk = ghLooseChunk.CreateChunk("Block", 0);
+                            chunk.SetString("Name", hook.CustomNickName);
+                            chunk.SetBoolean("Empty", volatileData.IsEmpty);
+                            if (!volatileData.IsEmpty)
+                            {
+                                GH_Structure<IGH_Goo> tree = volatileData as GH_Structure<IGH_Goo>;
+
+                                if (!tree.Write(chunk.CreateChunk("Data")))
+                                    ErrorEvent(ghLooseChunk, string.Format("There was a problem writing the {0} data.", (object)hook.CustomNickName));
+                            }
+
+                            byte[] bytes = ghLooseChunk.Serialize_Binary();
+
+                            fileName += ".noahdata";
+                            File.WriteAllBytes(fileName, bytes);
+
+                            break;
+                        }
+                    default:
+                        break;
                 }
 
+                InfoEvent(this, new JObject
+                {
+                    ["route"] = "task-stored",
+                    ["id"] = ID.ToString(),
+                    ["index"] = index.ToString(),
+                    ["path"] = fileName
+                }.ToString());
             }
         }
     }

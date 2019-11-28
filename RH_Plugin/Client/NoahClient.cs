@@ -3,6 +3,7 @@ using Newtonsoft.Json.Linq;
 using Noah.Tasker;
 using Noah.UI;
 using Noah.Utils;
+using Eto.Forms;
 using Rhino;
 using Rhino.UI;
 using System;
@@ -71,10 +72,22 @@ namespace Noah.CLient
 
         public async void Exit()
         {
-            ErrorEvent(this, "_(:_」∠)_ Could not connect to Noah Client, Rhino will exit in 5 second.");
-            // TODO Show confirm box
-            await Task.Delay(5000);
-            Rhino.RhinoApp.Exit();
+            ErrorEvent(this, "_(:_」∠)_ Could not connect to Noah Client, Rhino will exit in 3 second.");
+            await Task.Delay(300);
+
+            RhinoApp.InvokeOnUiThread(new Action(() =>
+            {
+                DialogResult dialogResult = MessageBox.Show(
+                    RhinoEtoApp.MainWindow,
+                    "Noah Server 已断线并且重联5次都失败了，是否关闭Rhino",
+                    "重联失败",
+                    MessageBoxButtons.YesNo,
+                    MessageBoxType.Error);
+                if (dialogResult == DialogResult.Yes)
+                {
+                    RhinoApp.Exit();
+                }
+            }));
         }
 
         public async void Reconnect()

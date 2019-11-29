@@ -10,6 +10,6 @@ namespace Noah.Tasker
     {
         public Guid ID { get; set; }
         public DateTime date { get; set; }
-        public List<TaskData> dataList { get; set; }
+        public string table { get; set; }
     }
 }

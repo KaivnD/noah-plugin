@@ -12,5 +12,6 @@ namespace Noah.Tasker
         public string dataID;
         public string name;
         public object value;
+        public string table;
     }
 }

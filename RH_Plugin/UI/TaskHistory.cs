@@ -25,10 +25,11 @@ namespace Noah.UI
             Text = name;
             Size = new Size(-1, -1);
 
-            MouseDoubleClick += TaskHistory_MouseDoubleClick;
+            // TODO FIX 折叠事件冒泡问题
+            // MouseDown += TaskHistory_MouseDown;
         }
 
-        private void TaskHistory_MouseDoubleClick(object sender, MouseEventArgs e)
+        private void TaskHistory_MouseDown(object sender, MouseEventArgs e)
         {
             if (!folded) Content = null;
             else Content = TaskRows;

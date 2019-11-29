@@ -34,7 +34,8 @@ namespace Noah.UI
             StackGrid = new GridView()
             {
                 ShowHeader = false,
-                DataStore = Logs
+                DataStore = Logs,
+                GridLines = GridLines.Vertical
             };
 
             StackGrid.Columns.Add(new GridColumn()

@@ -36,6 +36,11 @@ namespace Noah.Tasker
 
         public string ticket { set; get; }
 
+        /// <summary>
+        /// 每一次执行任务表格部分的参数镜像
+        /// </summary>
+        public string dataTable { set; get; }
+
         public event ErrorHandler ErrorEvent;
         public event InfoHandler DoneEvent;
         public event InfoHandler InfoEvent;
@@ -43,14 +48,7 @@ namespace Noah.Tasker
 
         public NoahTask()
         {
-            try
-            {
-                history = new List<TaskRecord>();
-            }
-            catch
-            {
-                ErrorEvent(this, "无法初始化任务历史记录");
-            }
+            history = new List<TaskRecord>();
         }
 
         public void Run()
@@ -198,20 +196,12 @@ namespace Noah.Tasker
 
         internal void SetData(TaskData taskData)
         {
+            // 保证每一次传输过来的数据都是新鲜的
+            if (!Equals(taskData.ID, ID) || dataList.Count > 0) return;
 
-            if (!Equals(taskData.ID, ID)) return;
+            dataTable = taskData.table;
 
-            TaskData match = (from data in dataList
-                              where Equals(data.dataID, taskData.dataID)
-                              select data).FirstOrDefault();
-
-            if (match != null)
-            {
-                // if (match.value == taskData.value) return;
-
-                match.value = taskData.value;
-                match.name = taskData.name;
-            } else dataList.Add(taskData);
+            dataList.Add(taskData);
 
             UpdateData(false);
         }
@@ -219,8 +209,6 @@ namespace Noah.Tasker
         private void UpdateData(bool recomputeOnTheEnd)
         {
             if (dataList.Count == 0 || dataList == null) return;
-
-            history.Add(new TaskRecord() { ID = ID , date = DateTime.Now, dataList = dataList });
 
             GH_DocumentServer doc_server = Instances.DocumentServer;
 
@@ -235,6 +223,8 @@ namespace Noah.Tasker
             if (doc == null) return;
 
             var hooks = doc.ClusterInputHooks();
+            var record = new TaskRecord() { ID = ID, date = DateTime.Now, table = dataTable };
+            history.Add(record);
 
             foreach (var hook in hooks)
             {

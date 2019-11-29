@@ -60,6 +60,7 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Data" />
     <Reference Include="System.Drawing" />
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Windows.Forms" />
@@ -92,6 +93,7 @@
     <Compile Include="Tasker\TaskType.cs" />
     <Compile Include="UI\HistoryPanel.cs" />
     <Compile Include="UI\LoggerPanel.cs" />
+    <Compile Include="UI\TableViewer.cs" />
     <Compile Include="Utils\DocObjectBaker.cs" />
     <Compile Include="Utils\EventHandler.cs" />
     <Compile Include="Utils\File3dmWriter.cs" />

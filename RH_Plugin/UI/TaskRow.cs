@@ -1,15 +1,20 @@
 ﻿using Eto.Drawing;
 using Eto.Forms;
+using Newtonsoft.Json;
+using Noah.Tasker;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
 
 namespace Noah.UI
 {
     public class TaskRow : DynamicLayout
     {
-        public TaskRow(string name)
+        public string Table;
+        public TaskRow(string name, string table)
         {
+            Table = table;
             var view = Rhino.RhinoDoc.ActiveDoc.Views.ActiveView;
             Padding = new Padding(3);
             Size = new Size(-1, -1);
@@ -22,7 +27,7 @@ namespace Noah.UI
 
             var detailMenu = new ButtonMenuItem
             {
-                Text = "Test"
+                Text = "Table"
             };
 
             detailMenu.Click += DetailMenu_Click;
@@ -41,8 +46,19 @@ namespace Noah.UI
 
         private void DetailMenu_Click(object sender, EventArgs e)
         {
-            // TO DO 展示这条记录的数据表格
-            MessageBox.Show("展示这条记录的数据表格");
+            try
+            {
+                Rhino.RhinoApp.InvokeOnUiThread(new Action(() => 
+                {
+                    var table = new TableViewer(Table);
+                    table.Show();
+                }));
+            }
+            catch
+            {
+
+            }
+
         }
 
         private void TaskRow_MouseDoubleClick(object sender, MouseEventArgs e)

@@ -81,14 +81,11 @@ namespace Noah.UI
                 if (historyGroup == null)
                 {
                     var his = new TaskHistory(name, record.ID);
-                    his.AddRow(new TaskRow(record.date.ToString("[MM/dd HH:mm:ss]")));
+                    his.AddRow(new TaskRow(record.date.ToString("[MM/dd HH:mm:ss]"), record.table));
 
                     StackLayout.Items.Add(new StackLayoutItem(his));
                 }
-                else
-                {
-                    historyGroup.AddRow(new TaskRow(record.date.ToString("[MM/dd HH:mm:ss]")));
-                }
+                else historyGroup.AddRow(new TaskRow(record.date.ToString("[MM/dd HH:mm:ss]"), record.table));
             }));
         }
 

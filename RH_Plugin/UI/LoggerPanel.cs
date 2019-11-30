@@ -99,7 +99,17 @@ namespace Noah.UI
             {
                 Ts = DateTime.Now.ToString("[MM/dd HH:mm:ss]"),
                 Text = msg,
-                LogLevel = EtoExtensions.ToEto(DrawLevelIcon(System.Drawing.Color.Green))
+                LogLevel = LevelIcon(Colors.Green)
+            })));
+        }
+
+        public void Debug(string msg)
+        {
+            RhinoApp.InvokeOnUiThread(new Action(() => Logs.Add(new Log
+            {
+                Ts = DateTime.Now.ToString("[MM/dd HH:mm:ss]"),
+                Text = msg,
+                LogLevel = LevelIcon(Colors.Blue)
             })));
         }
 
@@ -109,7 +119,7 @@ namespace Noah.UI
             {
                 Ts = DateTime.Now.ToString("[MM/dd HH:mm:ss]"),
                 Text = msg,
-                LogLevel = EtoExtensions.ToEto(DrawLevelIcon(System.Drawing.Color.Yellow))
+                LogLevel = LevelIcon(Colors.Yellow)
             })));
         }
 
@@ -119,24 +129,23 @@ namespace Noah.UI
             {
                 Ts = DateTime.Now.ToString("[MM/dd HH:mm:ss]"),
                 Text = msg,
-                LogLevel = EtoExtensions.ToEto(DrawLevelIcon(System.Drawing.Color.Red))
+                LogLevel = LevelIcon(Colors.Red)
             })));
         }
 
-        public System.Drawing.Bitmap DrawLevelIcon (System.Drawing.Color color)
+        private Bitmap LevelIcon(Color color)
         {
-            System.Drawing.Bitmap bitmap = new System.Drawing.Bitmap(12, 12);
-            System.Drawing.Graphics g = System.Drawing.Graphics.FromImage(bitmap);
-            g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
-            System.Drawing.Brush bush = new System.Drawing.SolidBrush(color);
-            g.FillEllipse(bush, 1, 1, 10, 10);
-            g.Save();
-            g.Dispose();
-            bitmap.MakeTransparent(System.Drawing.Color.Transparent);
+            Bitmap bitmap = new Bitmap(12, 12, PixelFormat.Format32bppRgba);
+            Graphics graphics = new Graphics(bitmap)
+            {
+                AntiAlias = true
+            };
+            Brush brush = new SolidBrush(color);
 
+            graphics.FillEllipse(brush, 1, 1, 10, 10);
+            graphics.Dispose();
             return bitmap;
         }
-
 
         public void PanelClosing(uint documentSerialNumber, bool onCloseDocument)
         {

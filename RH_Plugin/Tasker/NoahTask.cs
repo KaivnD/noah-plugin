@@ -41,8 +41,12 @@ namespace Noah.Tasker
         /// </summary>
         public string dataTable { set; get; }
 
+        public delegate void TaskDoneHandler(object sender, string message, bool restore = false);
+
+        private bool IsTaskRestore;
+
         public event ErrorHandler ErrorEvent;
-        public event InfoHandler DoneEvent;
+        public event TaskDoneHandler DoneEvent;
         public event InfoHandler InfoEvent;
         public event WarningHandler WarningEvent;
 
@@ -126,7 +130,8 @@ namespace Noah.Tasker
                 ErrorEvent(sender, ex.Message);
             } finally
             {
-                DoneEvent(this, ID.ToString());
+                DoneEvent(this, ID.ToString(), IsTaskRestore);
+                IsTaskRestore = false;
             }
         }
 
@@ -165,7 +170,7 @@ namespace Noah.Tasker
             }
         }
 
-        public void BringToFront()
+        public void BringToFront(bool restore = false)
         {
             GH_DocumentServer doc_server = Instances.DocumentServer;
 
@@ -189,8 +194,10 @@ namespace Noah.Tasker
             activeCanvas.Document = doc;
             activeCanvas.Refresh();
 
+            IsTaskRestore = restore;
+
             // SolutionEndCnt = 0;
-            UpdateData(true);
+            UpdateData(true, restore);
         }
 
         internal void SetData(TaskData taskData)
@@ -205,7 +212,7 @@ namespace Noah.Tasker
             UpdateData(false);
         }
 
-        private void UpdateData(bool recomputeOnTheEnd)
+        private void UpdateData(bool recomputeOnTheEnd, bool restore = false)
         {
             if (dataList.Count == 0 || dataList == null) return;
 
@@ -222,8 +229,12 @@ namespace Noah.Tasker
             if (doc == null) return;
 
             var hooks = doc.ClusterInputHooks();
-            var record = new TaskRecord() { ID = ID, date = DateTime.Now, table = dataTable };
-            history.Add(record);
+
+            if (!restore)
+            {
+                var record = new TaskRecord() { ID = ID, date = DateTime.Now, table = dataTable };
+                history.Add(record);
+            }
 
             foreach (var hook in hooks)
             {

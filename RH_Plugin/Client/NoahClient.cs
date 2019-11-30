@@ -188,31 +188,68 @@ namespace Noah.CLient
 
         private void HistoryPanel_RestoreEvent(TaskRow taskRow)
         {
-            var task = new NoahTask();
-            task.ID = taskRow.TaskID;
-            TaskRunner(task);
+            NoahTask noahTask = TaskList.Find(task => Equals(task.ID, taskRow.TaskID));
+            if (noahTask == null) return;
+            string[][] taskTable = JsonConvert.DeserializeObject<string[][]>(taskRow.Table);
+
+            List<string> alphaTable = new List<string>();
+
+            int cha = 65;
+            int Z = 90;
+
+            while(cha <= Z)
+            {
+                alphaTable.Add(((char)cha).ToString());
+                ++cha;
+            }
+
+            List<TaskData> taskDatas = new List<TaskData>();
+
+            for(int i = 0; i < taskTable.GetLength(0); i++)
+            {
+                for(int j = 0; j < taskTable[i].Length; j++)
+                {
+                    string dataID = "@" + alphaTable[j] + i;
+                    string value = taskTable[i][j];
+                    if (string.IsNullOrEmpty(value)) continue;
+                    taskDatas.Add(new TaskData
+                    {
+                        dataID = dataID,
+                        name = dataID,
+                        ID = noahTask.ID,
+                        table = taskRow.Table,
+                        value = value
+                    });
+                }
+            }
+
+            noahTask.dataList = taskDatas;
+            noahTask.dataTable = taskRow.Table;
+
+            TaskRunner(noahTask, true);
         }
 
-        private void TaskRunner (NoahTask task)
+        private void TaskRunner (NoahTask task, bool restore = false)
         {
-            NoahTask _task = (from t in TaskList
-                              where Equals(t.ID, task.ID)
-                              select t).FirstOrDefault();
+            NoahTask _task = TaskList.Find(__task => Equals(__task.ID, task.ID));
 
             if (_task != null)
             {
-                ErrorEvent(this, "This task is already running!");
-                _task.BringToFront();
+                // ErrorEvent(this, "This task is already running!");
+                _task.dataList = task.dataList;
+                _task.BringToFront(restore);
                 return;
             }
 
             TaskList.Add(task);
 
-            InfoEvent(this, string.Format("{0}({1}) 已加载", task.name, task.ID.ToString().Split('-')[0]));
+            string taskInstanceName = string.Format("{0}({1})", task.name, task.ID.ToString().Split('-')[0]);
+
+            InfoEvent(this, taskInstanceName + " 已加载");
 
             task.ErrorEvent += (sd, msg) => ErrorEvent(sd, msg);
 
-            task.DoneEvent += (sd, id) =>
+            task.DoneEvent += (sd, id, isRestore) =>
             {
                 var obj = new JObject
                 {
@@ -225,16 +262,17 @@ namespace Noah.CLient
 
                 if (noahTask.history.Count < 1)
                 {
-                    ErrorEvent(this, string.Format("{0} 没有历史", noahTask.name));
+                    ErrorEvent(this, string.Format("{0} 没有历史", taskInstanceName));
                     return;
                 }
 
                 if (HistoryPanel == null) Panels.OpenPanel(HistoryPanel.PanelId);
 
                 HistoryPanel = Panels.GetPanel<HistoryPanel>(RhinoDoc.ActiveDoc);
-                HistoryPanel.AddHistory(noahTask.name, noahTask.history.Last());
+                
+                if(!isRestore) HistoryPanel.AddHistory(noahTask.name, noahTask.history.Last());
 
-                InfoEvent(noahTask, string.Format("{0} 完成", noahTask.name));
+                InfoEvent(noahTask, string.Format("{0} " + (isRestore ? "已恢复" : "完成"), taskInstanceName));
 
                 HistoryPanel.RestoreEvent -= HistoryPanel_RestoreEvent;
                 HistoryPanel.RestoreEvent += HistoryPanel_RestoreEvent;

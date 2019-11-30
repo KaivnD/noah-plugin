@@ -22,6 +22,9 @@ namespace Noah.UI
 
         private readonly StackLayout StackLayout;
 
+        public delegate void TaskRestoreHandler(TaskRow taskRow);
+        public event TaskRestoreHandler RestoreEvent;
+
         /// <summary>
         /// 用于记录所有运行历史
         /// </summary>
@@ -79,13 +82,14 @@ namespace Noah.UI
                 TaskHistory historyGroup = GetHistoryByID(record.ID);
 
                 if (historyGroup == null)
-                {
-                    var his = new TaskHistory(name, record.ID);
-                    his.AddRow(new TaskRow(record.date.ToString("[MM/dd HH:mm:ss]"), record.table));
+                    historyGroup = new TaskHistory(name, record.ID);
 
-                    StackLayout.Items.Add(new StackLayoutItem(his));
-                }
-                else historyGroup.AddRow(new TaskRow(record.date.ToString("[MM/dd HH:mm:ss]"), record.table));
+                TaskRow taskRow = new TaskRow(string.Format("{0}({1})", name, record.ID.ToString().Split('-')[0]), record.table, record.ID, record.date.ToString("[MM/dd HH:mm:ss]"));
+                taskRow.RestoreEvent += task => RestoreEvent(task);
+                historyGroup.AddRow(taskRow);
+
+                if (historyGroup.TaskRows.Items.Count == 1)
+                    StackLayout.Items.Add(new StackLayoutItem(historyGroup));
             }));
         }
 

@@ -126,54 +126,7 @@ namespace Noah.CLient
 
                         task.SetWorkspace(WorkDir);
 
-                        NoahTask _task = (from t in TaskList
-                                    where Equals(t.ID, task.ID)
-                                    select t).FirstOrDefault();
-
-                        if (_task != null)
-                        {
-                            ErrorEvent(this, "This task is already running!");
-                            _task.BringToFront();
-                            break;
-                        }
-
-                        TaskList.Add(task);
-
-                        InfoEvent(this, string.Format("{0}({1}) 已加载", task.name, task.ID.ToString().Split('-')[0]));
-
-                        task.ErrorEvent += (sd, msg) => ErrorEvent(sd, msg);
-
-                        task.DoneEvent += (sd, id) =>
-                        {
-                            var obj = new JObject
-                            {
-                                ["route"] = "task-end",
-                                ["id"] = id
-                            };
-                            Client.Send(obj.ToString());
-
-                            if (!(sd is NoahTask noahTask)) return;
-
-                            if(noahTask.history.Count < 1)
-                            {
-                                ErrorEvent(this, string.Format("{0} 没有历史", noahTask.name));
-                                return;
-                            }
-
-                            if (HistoryPanel == null) Panels.OpenPanel(HistoryPanel.PanelId);
-
-                            HistoryPanel = Panels.GetPanel<HistoryPanel>(RhinoDoc.ActiveDoc);
-                            HistoryPanel.AddHistory(noahTask.name, noahTask.history.Last());
-
-                            InfoEvent(noahTask, string.Format("{0} 完成", noahTask.name));
-                        };
-
-                        task.InfoEvent += (sd, json) =>
-                        {
-                            Client.Send(json);
-                        };
-
-                        task.Run();
+                        TaskRunner(task);
 
                         break;
                     }
@@ -231,6 +184,68 @@ namespace Noah.CLient
                 default:
                     break;
             }
+        }
+
+        private void HistoryPanel_RestoreEvent(TaskRow taskRow)
+        {
+            var task = new NoahTask();
+            task.ID = taskRow.TaskID;
+            TaskRunner(task);
+        }
+
+        private void TaskRunner (NoahTask task)
+        {
+            NoahTask _task = (from t in TaskList
+                              where Equals(t.ID, task.ID)
+                              select t).FirstOrDefault();
+
+            if (_task != null)
+            {
+                ErrorEvent(this, "This task is already running!");
+                _task.BringToFront();
+                return;
+            }
+
+            TaskList.Add(task);
+
+            InfoEvent(this, string.Format("{0}({1}) 已加载", task.name, task.ID.ToString().Split('-')[0]));
+
+            task.ErrorEvent += (sd, msg) => ErrorEvent(sd, msg);
+
+            task.DoneEvent += (sd, id) =>
+            {
+                var obj = new JObject
+                {
+                    ["route"] = "task-end",
+                    ["id"] = id
+                };
+                Client.Send(obj.ToString());
+
+                if (!(sd is NoahTask noahTask)) return;
+
+                if (noahTask.history.Count < 1)
+                {
+                    ErrorEvent(this, string.Format("{0} 没有历史", noahTask.name));
+                    return;
+                }
+
+                if (HistoryPanel == null) Panels.OpenPanel(HistoryPanel.PanelId);
+
+                HistoryPanel = Panels.GetPanel<HistoryPanel>(RhinoDoc.ActiveDoc);
+                HistoryPanel.AddHistory(noahTask.name, noahTask.history.Last());
+
+                InfoEvent(noahTask, string.Format("{0} 完成", noahTask.name));
+
+                HistoryPanel.RestoreEvent -= HistoryPanel_RestoreEvent;
+                HistoryPanel.RestoreEvent += HistoryPanel_RestoreEvent;
+            };
+
+            task.InfoEvent += (sd, json) =>
+            {
+                Client.Send(json);
+            };
+
+            task.Run();
         }
     }
 

@@ -22,7 +22,7 @@ namespace Noah.UI
                 Padding = 3,
                 HorizontalContentAlignment = HorizontalAlignment.Stretch
             };
-            Text = name;
+            Text = name + "("+ id.ToString().Split('-')[0] + ")";
             Size = new Size(-1, -1);
 
             // TODO FIX 折叠事件冒泡问题

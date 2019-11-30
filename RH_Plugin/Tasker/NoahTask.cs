@@ -144,8 +144,7 @@ namespace Noah.Tasker
             {
                 while (enumerator1.MoveNext())
                 {
-                    IGH_PreviewObject current = enumerator1.Current as IGH_PreviewObject;
-                    if (current != null)
+                    if (enumerator1.Current is IGH_PreviewObject current)
                     {
                         BoundingBox clippingBox = current.ClippingBox;
                         if (clippingBox.IsValid)

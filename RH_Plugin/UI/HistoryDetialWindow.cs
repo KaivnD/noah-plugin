@@ -11,14 +11,14 @@ using Eto.Drawing;
 
 namespace Noah.UI
 {
-    public class TableViewer : Form
+    public class HistoryDetialWindow : Dialog
     {
         private readonly string[][] table;
-        public TableViewer(string tableJson)
+        public HistoryDetialWindow(string name, string tableJson, Bitmap bitmap)
         {
             ClientSize = new Size(600, 400);
             table = JsonConvert.DeserializeObject<string[][]>(tableJson);
-            Title = "数据表";
+            Title = name;
 
             string[] headerRow = table[0];
 
@@ -48,7 +48,22 @@ namespace Noah.UI
                 });
             }
 
-            Content = grid;
+            var layout = new DynamicLayout
+            {
+                Padding = new Padding(5)
+            };
+
+            layout.AddSeparateRow(new ImageView
+            {
+                Image = bitmap
+            });
+
+            layout.AddSeparateRow(grid);
+
+            Content = new Scrollable
+            {
+                Content = layout
+            };
         }
     }
 }

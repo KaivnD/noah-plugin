@@ -18,12 +18,17 @@ namespace Noah.UI
         public readonly Bitmap BigBitmap;
         public readonly Guid TaskID;
         public readonly string TaskName;
+        public readonly Guid HistoryID;
+        public string title;
+        public string memo;
 
-        public delegate void TaskRestoreHandler(TaskRow taskRow);
-        public event TaskRestoreHandler RestoreEvent;
+        public delegate void TaskRowHandler(TaskRow taskRow);
+        public event TaskRowHandler RestoreEvent;
+        public event TaskRowHandler StoreEvent;
 
         public TaskRow(string name, string table, Guid guid, string datetime)
         {
+            HistoryID = Guid.NewGuid();
             Table = table;
             var view = Rhino.RhinoDoc.ActiveDoc.Views.ActiveView;
             Padding = new Padding(3);
@@ -38,7 +43,7 @@ namespace Noah.UI
             BeginVertical(); // buttons section
             BeginHorizontal();
             Add(new ImageView() { Image = Bitmap });
-            Add(new Label() { Text = datetime }) ;
+            Add(new Label() { Text = title ?? "未储存" }) ;
             EndHorizontal();
             EndVertical();
 
@@ -79,11 +84,16 @@ namespace Noah.UI
 
         private void StoreBtn_Click(object sender, EventArgs e)
         {
-            File.WriteAllText(@"D:\task.json", JsonConvert.SerializeObject(new JObject
+            var dialog = new HistoryStoreMemo();
+            dialog.SubmitEvent += (_title, _memo) => 
             {
-                ["table"] = Table,
-                ["img"] = Bitmap.ToByteArray(ImageFormat.Png)
-            }, Formatting.Indented));
+                title = _title;
+                memo = _memo;
+
+                StoreEvent(this);
+            };
+
+            Rhino.RhinoApp.InvokeOnUiThread(new Action(() => dialog.ShowModal(Rhino.UI.RhinoEtoApp.MainWindow)));
         }
 
         private void DetailMenu_Click(object sender, EventArgs e)
@@ -101,11 +111,6 @@ namespace Noah.UI
 
             }
 
-        }
-
-        private void TaskRow_MouseDoubleClick(object sender, MouseEventArgs e)
-        {
-            MessageBox.Show("123");
         }
 
         private void TaskRow_MouseLeave(object sender, MouseEventArgs e)

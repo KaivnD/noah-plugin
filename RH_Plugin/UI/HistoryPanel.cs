@@ -1,5 +1,7 @@
 ﻿using Eto.Drawing;
 using Eto.Forms;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Noah.Tasker;
 using Rhino;
 using Rhino.UI;
@@ -22,8 +24,9 @@ namespace Noah.UI
 
         private readonly StackLayout StackLayout;
 
-        public delegate void TaskRestoreHandler(TaskRow taskRow);
-        public event TaskRestoreHandler RestoreEvent;
+        public delegate void TaskRowHandler(TaskRow taskRow);
+        public event TaskRowHandler RestoreEvent;
+        public event TaskRowHandler StoreEvent;
 
         /// <summary>
         /// 用于记录所有运行历史
@@ -86,11 +89,17 @@ namespace Noah.UI
 
                 TaskRow taskRow = new TaskRow(string.Format("{0}({1})", name, record.ID.ToString().Split('-')[0]), record.table, record.ID, record.date.ToString("[MM/dd HH:mm:ss]"));
                 taskRow.RestoreEvent += task => RestoreEvent(task);
+                taskRow.StoreEvent += TaskRow_StoreEvent;
                 historyGroup.AddRow(taskRow);
 
                 if (historyGroup.TaskRows.Items.Count == 1)
                     StackLayout.Items.Add(new StackLayoutItem(historyGroup));
             }));
+        }
+
+        private void TaskRow_StoreEvent(TaskRow taskRow)
+        {
+            StoreEvent(taskRow);
         }
 
         private readonly uint m_document_sn;

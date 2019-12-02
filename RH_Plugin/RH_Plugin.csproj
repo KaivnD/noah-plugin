@@ -92,6 +92,7 @@
     <Compile Include="Tasker\TaskRecord.cs" />
     <Compile Include="Tasker\TaskType.cs" />
     <Compile Include="UI\HistoryPanel.cs" />
+    <Compile Include="UI\HistoryStoreMemo.cs" />
     <Compile Include="UI\LoggerPanel.cs" />
     <Compile Include="UI\HistoryDetialWindow.cs" />
     <Compile Include="Utils\DocObjectBaker.cs" />

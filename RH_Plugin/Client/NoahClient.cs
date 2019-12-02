@@ -12,6 +12,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using WebSocketSharp;
+using Eto.Drawing;
 
 namespace Noah.CLient
 {
@@ -276,6 +277,9 @@ namespace Noah.CLient
 
                 HistoryPanel.RestoreEvent -= HistoryPanel_RestoreEvent;
                 HistoryPanel.RestoreEvent += HistoryPanel_RestoreEvent;
+
+                HistoryPanel.StoreEvent -= HistoryPanel_StoreEvent;
+                HistoryPanel.StoreEvent += HistoryPanel_StoreEvent;
             };
 
             task.InfoEvent += (sd, json) =>
@@ -284,6 +288,21 @@ namespace Noah.CLient
             };
 
             task.Run();
+        }
+
+        private void HistoryPanel_StoreEvent(TaskRow taskRow)
+        {
+            Client.Send(JsonConvert.SerializeObject(new JObject
+            {
+                ["route"] = "history-store",
+                ["id"] = taskRow.HistoryID.ToString(),
+                ["task"] = taskRow.TaskID.ToString(),
+                ["title"] = taskRow.title,
+                ["memo"] = taskRow.memo,
+                ["table"] = taskRow.Table,
+                ["thumbnail"] = taskRow.Bitmap.ToByteArray(ImageFormat.Png),
+                ["img"] = taskRow.BigBitmap.ToByteArray(ImageFormat.Png)
+            }));
         }
     }
 

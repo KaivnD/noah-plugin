@@ -13,6 +13,8 @@ using System.Text;
 using System.Threading.Tasks;
 using WebSocketSharp;
 using Eto.Drawing;
+using Grasshopper.Kernel;
+using Noah.Client;
 
 namespace Noah.CLient
 {
@@ -141,8 +143,8 @@ namespace Noah.CLient
                         TaskData taskData = JsonConvert.DeserializeObject<TaskData>(eve.data);
 
                         NoahTask task = (from t in TaskList
-                                            where Equals(t.ID, taskData.ID)
-                                            select t).FirstOrDefault();
+                                         where Equals(t.ID, taskData.ID)
+                                         select t).FirstOrDefault();
 
                         if (task == null)
                         {
@@ -156,6 +158,15 @@ namespace Noah.CLient
                     }
                 case ClientEventType.pick:
                     {
+                        RhinoApp.InvokeOnUiThread(new Action(() => 
+                        {
+                            TaskData taskData = JsonConvert.DeserializeObject<TaskData>(eve.data);
+                            taskData.value = Picker.PickCurve();
+
+                            NoahTask noahTask = TaskList.Find(task => Equals(task.ID, taskData.ID));
+                            noahTask.dataList.Add(taskData);
+                            TaskRunner(noahTask);
+                        }));
                         break;
                     }
                 default:

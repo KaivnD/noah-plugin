@@ -348,7 +348,12 @@ namespace Noah.Tasker
 
             GH_Number castNumber = null;
             GH_String castString = null;
-            if (GH_Convert.ToGHNumber(value, GH_Conversion.Both, ref castNumber))
+            GH_Curve castCurve = null;
+            if (GH_Convert.ToGHCurve(value, GH_Conversion.Both, ref castCurve))
+            {
+                m_data.Append(new GH_ObjectWrapper(castCurve));
+            }
+            else if (GH_Convert.ToGHNumber(value, GH_Conversion.Both, ref castNumber))
             {
                 m_data.Append(new GH_ObjectWrapper(castNumber));
             }

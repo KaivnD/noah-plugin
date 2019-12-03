@@ -19,6 +19,7 @@ namespace Noah.UI
         public readonly Guid TaskID;
         public readonly string TaskName;
         public readonly Guid HistoryID;
+        public readonly List<TaskData> TaskDatas;
         public string title;
         public string memo;
 
@@ -26,10 +27,11 @@ namespace Noah.UI
         public event TaskRowHandler RestoreEvent;
         public event TaskRowHandler StoreEvent;
 
-        public TaskRow(string name, string table, Guid guid, string datetime)
+        public TaskRow(string name, string table, Guid guid, string datetime, List<TaskData> datas)
         {
             HistoryID = Guid.NewGuid();
             Table = table;
+            TaskDatas = datas;
             var view = Rhino.RhinoDoc.ActiveDoc.Views.ActiveView;
             Padding = new Padding(3);
             Size = new Size(-1, -1);

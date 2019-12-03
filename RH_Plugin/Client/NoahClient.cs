@@ -131,30 +131,6 @@ namespace Noah.CLient
 
                         break;
                     }
-                case ClientEventType.group:
-                    {
-                        TaskGroup group = JsonConvert.DeserializeObject<TaskGroup>(eve.data);
-
-                        group.tasks.ForEach(task =>
-                        {
-                            NoahTask _task = (from t in TaskList
-                                                where Equals(t.ID, task.ID)
-                                                select t).FirstOrDefault();
-
-                            if (_task != null)
-                            {
-                                ErrorEvent(this, "This task is already running!");
-                                _task.BringToFront();
-                            }
-
-                            TaskList.Add(task);
-
-                            InfoEvent(this, task.ID + " is loaded!");
-
-                            task.Run();
-                        });
-                        break;
-                    }
                 case ClientEventType.message:
                     {
                         InfoEvent(this, eve.data);
@@ -223,6 +199,8 @@ namespace Noah.CLient
                     });
                 }
             }
+
+            taskRow.TaskDatas.ForEach(data => taskDatas.Add(data));
 
             noahTask.dataList = taskDatas;
             noahTask.dataTable = taskRow.Table;

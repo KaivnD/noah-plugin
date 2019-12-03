@@ -87,7 +87,7 @@ namespace Noah.UI
                 if (historyGroup == null)
                     historyGroup = new TaskHistory(name, record.ID);
 
-                TaskRow taskRow = new TaskRow(string.Format("{0}({1})", name, record.ID.ToString().Split('-')[0]), record.table, record.ID, record.date.ToString("[MM/dd HH:mm:ss]"));
+                TaskRow taskRow = new TaskRow(string.Format("{0}({1})", name, record.ID.ToString().Split('-')[0]), record.table, record.ID, record.date.ToString("[MM/dd HH:mm:ss]"), record.taskDatas);
                 taskRow.RestoreEvent += task => RestoreEvent(task);
                 taskRow.StoreEvent += TaskRow_StoreEvent;
                 historyGroup.AddRow(taskRow);

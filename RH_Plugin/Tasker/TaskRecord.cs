@@ -11,5 +11,6 @@ namespace Noah.Tasker
         public Guid ID { get; set; }
         public DateTime date { get; set; }
         public string table { get; set; }
+        public List<TaskData> taskDatas { get; set; }
     }
 }

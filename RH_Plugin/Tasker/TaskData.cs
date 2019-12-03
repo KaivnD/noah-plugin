@@ -13,5 +13,6 @@ namespace Noah.Tasker
         public string name;
         public object value;
         public string table;
+        public string type;
     }
 }

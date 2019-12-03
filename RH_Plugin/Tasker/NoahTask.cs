@@ -232,7 +232,8 @@ namespace Noah.Tasker
 
             if (!restore)
             {
-                var record = new TaskRecord() { ID = ID, date = DateTime.Now, table = dataTable };
+                var rndData = dataList.FindAll(data => data.type == "4");
+                var record = new TaskRecord() { ID = ID, date = DateTime.Now, table = dataTable, taskDatas = rndData };
                 history.Add(record);
             }
 

@@ -98,6 +98,7 @@
     <Compile Include="Utils\DocObjectBaker.cs" />
     <Compile Include="Utils\EventHandler.cs" />
     <Compile Include="Utils\File3dmWriter.cs" />
+    <Compile Include="Utils\IO.cs" />
     <Compile Include="Utils\Platform.cs" />
     <Compile Include="UI\TaskHistory.cs" />
     <Compile Include="UI\TaskRow.cs" />

@@ -15,6 +15,8 @@ using WebSocketSharp;
 using Eto.Drawing;
 using Grasshopper.Kernel;
 using Noah.Client;
+using Grasshopper.Kernel.Data;
+using Grasshopper.Kernel.Types;
 
 namespace Noah.CLient
 {
@@ -160,12 +162,25 @@ namespace Noah.CLient
                     {
                         RhinoApp.InvokeOnUiThread(new Action(() => 
                         {
-                            TaskData taskData = JsonConvert.DeserializeObject<TaskData>(eve.data);
-                            taskData.value = Picker.PickCurve();
+                            var crv = Picker.PickCurve();
+                            var structrue = new GH_Structure<IGH_Goo>();
 
-                            NoahTask noahTask = TaskList.Find(task => Equals(task.ID, taskData.ID));
-                            noahTask.dataList.Add(taskData);
-                            TaskRunner(noahTask);
+                            structrue.Append(crv);
+
+                            try
+                            {
+                                Client.Send(JsonConvert.SerializeObject(new JObject
+                                {
+                                    ["route"] = "store-picker-data",
+                                    ["guid"] = eve.data,
+                                    ["bytes"] = IO.SerializeGrasshopperData(structrue)
+                                }));
+
+                            } catch (Exception ex)
+                            {
+                                ErrorEvent(this, ex.Message);
+                            }
+                            
                         }));
                         break;
                     }

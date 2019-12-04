@@ -232,7 +232,7 @@ namespace Noah.Tasker
 
             if (!restore)
             {
-                var rndData = dataList.FindAll(data => data.type == "4");
+                var rndData = dataList.FindAll(data => data.type == "4" || data.type == "5");
                 var record = new TaskRecord() { ID = ID, date = DateTime.Now, table = dataTable, taskDatas = rndData };
                 history.Add(record);
             }
@@ -244,6 +244,11 @@ namespace Noah.Tasker
                 if (data == null) continue;
 
                 var m_data = SingleDataStructrue(data.value);
+
+                if (data.type == "5")
+                {
+                    m_data = IO.DeserializeGrasshopperData(Convert.FromBase64String((string)data.value));
+                }
 
                 // if (Equals(hook.VolatileData, m_data)) continue;
 
@@ -303,8 +308,6 @@ namespace Noah.Tasker
 
         private GH_Structure<IGH_Goo> SingleDataStructrue(object value)
         {
-            GH_Structure<IGH_Goo> m_data = new GH_Structure<IGH_Goo>();
-
             if (value is string path)
             {
                 if (File.Exists(path) && Path.GetExtension(path) == ".noahdata")
@@ -318,33 +321,12 @@ namespace Noah.Tasker
                     {
                         return null;
                     }
-                    GH_LooseChunk val = new GH_LooseChunk("Grasshopper Data");
-                    val.Deserialize_Binary(array);
-                    if (val.ItemCount == 0)
-                    {
-                        return null;
-                    }
 
-                    GH_Structure<IGH_Goo> gH_Structure = new GH_Structure<IGH_Goo>();
-                    GH_IReader val2 = val.FindChunk("Block", 0);
-
-                    bool boolean = val2.GetBoolean("Empty");
-
-                    if (boolean) return null;
-
-                    GH_IReader val3 = val2.FindChunk("Data");
-                    if (val3 == null)
-                    {
-                        return null;
-                    }
-                    else if (!gH_Structure.Read(val3))
-                    {
-                        return null;
-                    }
-                    
-                    return gH_Structure;
+                    return IO.DeserializeGrasshopperData(array);
                 }
             }
+
+            GH_Structure<IGH_Goo> m_data = new GH_Structure<IGH_Goo>();
 
             GH_Number castNumber = null;
             GH_String castString = null;
@@ -471,24 +453,17 @@ namespace Noah.Tasker
                         }
                     case "Data":
                         {
-                            GH_LooseChunk ghLooseChunk = new GH_LooseChunk("Grasshopper Data");
-                            ghLooseChunk.SetGuid("OriginId", this.ID);
-
-                            GH_IWriter chunk = ghLooseChunk.CreateChunk("Block", 0);
-                            chunk.SetString("Name", hook.CustomNickName);
-                            chunk.SetBoolean("Empty", volatileData.IsEmpty);
-                            if (!volatileData.IsEmpty)
+                            GH_Structure<IGH_Goo> tree = volatileData as GH_Structure<IGH_Goo>;
+                            try
                             {
-                                GH_Structure<IGH_Goo> tree = volatileData as GH_Structure<IGH_Goo>;
+                                byte[] bytes = IO.SerializeGrasshopperData(tree, hook.CustomName, volatileData.IsEmpty);
 
-                                if (!tree.Write(chunk.CreateChunk("Data")))
-                                    ErrorEvent(ghLooseChunk, string.Format("There was a problem writing the {0} data.", (object)hook.CustomNickName));
+                                fileName += ".noahdata";
+                                File.WriteAllBytes(fileName, bytes);
+                            } catch(Exception ex)
+                            {
+                                ErrorEvent(this, ex.Message);
                             }
-
-                            byte[] bytes = ghLooseChunk.Serialize_Binary();
-
-                            fileName += ".noahdata";
-                            File.WriteAllBytes(fileName, bytes);
 
                             break;
                         }

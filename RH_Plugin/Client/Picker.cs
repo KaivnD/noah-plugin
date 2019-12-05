@@ -15,7 +15,7 @@ namespace Noah.Client
 {
     public static class Picker
     {
-        public static GH_Curve PickCurve()
+        public static List<GH_Curve> PickCurves()
         {
             GetObject getObject;
             while (true)
@@ -24,11 +24,11 @@ namespace Noah.Client
                 getObject.SetCommandPrompt("Pick a Curve");
                 getObject.GeometryFilter = ObjectType.Curve | ObjectType.EdgeFilter;
 
-                if (getObject.Get() != GetResult.Object) continue;
+                if (getObject.GetMultiple(1, 0) != GetResult.Object) continue;
 
-                GH_Curve ghCurve = new GH_Curve(getObject.Object(0).Curve());
-
-                return ghCurve;
+                List<GH_Curve> ghCurveList1 = new List<GH_Curve>();
+                Array.ForEach(getObject.Objects(), (ObjRef obj) => ghCurveList1.Add(new GH_Curve(obj.Curve())));
+                return ghCurveList1;
             }
         }
     }

@@ -29,6 +29,7 @@ namespace Noah.Commands
         private int Port = 0;
 
         private bool ShowEditor = false;
+        private bool Debug = false;
 
         public NoahServer()
         {
@@ -71,6 +72,7 @@ namespace Noah.Commands
             {
                 var port = new OptionInteger(Port, 1024, 65535);
                 var toggle = new OptionToggle(ShowEditor, "Hide", "Show");
+                var debugger = new OptionToggle(Debug, "Off", "On");
 
                 go = new GetOption();
 
@@ -80,12 +82,14 @@ namespace Noah.Commands
                 go.AddOption("Observer");
                 go.AddOptionInteger("Port", ref port);
                 go.AddOptionToggle("Editor", ref toggle);
+                go.AddOptionToggle("Debug", ref debugger);
                 go.AddOption("Workspace");
 
                 GetResult result = go.Get();
                 if (result != GetResult.Option) break;
 
                 ShowEditor = toggle.CurrentValue;
+                Debug = debugger.CurrentValue;
 
                 string whereToGo = go.Option().EnglishName;
 
@@ -118,6 +122,7 @@ namespace Noah.Commands
                             Client.InfoEvent += Client_MessageEvent;
                             Client.ErrorEvent += Client_ErrorEvent;
                             Client.WarningEvent += Client_WarningEvent;
+                            Client.DebugEvent += Client_DebugEvent;
                         }
                         catch (Exception ex)
                         {
@@ -170,6 +175,12 @@ namespace Noah.Commands
             }
 
             return Result.Nothing;
+        }
+
+        private void Client_DebugEvent(string message)
+        {
+            if (!Debug) return;
+            Logger.Debug(message);
         }
 
         private void Client_WarningEvent(object sender, string message)

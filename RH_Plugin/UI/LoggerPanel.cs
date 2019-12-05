@@ -109,7 +109,7 @@ namespace Noah.UI
             {
                 Ts = DateTime.Now.ToString("[MM/dd HH:mm:ss]"),
                 Text = msg,
-                LogLevel = LevelIcon(Colors.Blue)
+                LogLevel = LevelIcon(Colors.LightSkyBlue)
             })));
         }
 

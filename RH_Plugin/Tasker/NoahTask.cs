@@ -243,11 +243,14 @@ namespace Noah.Tasker
 
                 if (data == null) continue;
 
-                var m_data = SingleDataStructrue(data.value);
+                GH_Structure<IGH_Goo> m_data;
 
                 if (data.type == "5")
                 {
                     m_data = IO.DeserializeGrasshopperData(Convert.FromBase64String((string)data.value));
+                } else
+                {
+                    m_data = SingleDataStructrue(data.value);
                 }
 
                 // if (Equals(hook.VolatileData, m_data)) continue;

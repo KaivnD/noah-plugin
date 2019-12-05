@@ -34,6 +34,7 @@ namespace Noah.CLient
         public event InfoHandler InfoEvent;
         public event ErrorHandler ErrorEvent;
         public event WarningHandler WarningEvent;
+        public event DebugHandler DebugEvent;
 
         private HistoryPanel HistoryPanel { get; set; }
 
@@ -144,17 +145,17 @@ namespace Noah.CLient
                     {
                         TaskData taskData = JsonConvert.DeserializeObject<TaskData>(eve.data);
 
-                        NoahTask task = (from t in TaskList
-                                         where Equals(t.ID, taskData.ID)
-                                         select t).FirstOrDefault();
+                        NoahTask noahTask = TaskList.Find(task => Equals(task.ID, taskData.ID));
 
-                        if (task == null)
+                        if (noahTask == null)
                         {
-                            ErrorEvent(this, "This task is not running!");
+                            // ErrorEvent(this, "This task is not running!");
                             break;
                         }
+                        DebugEvent(taskData.type);
+                        noahTask.dataList.Add(taskData);
 
-                        task.SetData(taskData);
+                        TaskRunner(noahTask);
 
                         break;
                     }

@@ -253,9 +253,10 @@ namespace Noah.Tasker
                     m_data = SingleDataStructrue(data.value);
                 }
 
-                // if (Equals(hook.VolatileData, m_data)) continue;
+                hook.ClearPlaceholderData();
 
-                hook.SetPlaceholderData(m_data);
+                // if (Equals(hook.VolatileData, m_data)) continue;
+                if (!m_data.IsEmpty) hook.SetPlaceholderData(m_data);
 
                 if (!recomputeOnTheEnd) hook.ExpireSolution(true);
             }

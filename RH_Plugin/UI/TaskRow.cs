@@ -27,7 +27,7 @@ namespace Noah.UI
         public event TaskRowHandler RestoreEvent;
         public event TaskRowHandler StoreEvent;
 
-        public TaskRow(string name, string table, Guid guid, string datetime, List<TaskData> datas)
+        public TaskRow(int index, string name, string table, Guid guid, string datetime, List<TaskData> datas)
         {
             HistoryID = Guid.NewGuid();
             Table = table;
@@ -45,7 +45,12 @@ namespace Noah.UI
             BeginVertical(); // buttons section
             BeginHorizontal();
             Add(new ImageView() { Image = Bitmap });
-            Add(new Label() { Text = title ?? "未储存" }) ;
+            var layout = new DynamicLayout
+            {
+                Padding = new Padding(5),
+            };
+            layout.AddRow(null, new Label() { Text = "#" + index });
+            Add(layout);
             EndHorizontal();
             EndVertical();
 

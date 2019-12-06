@@ -17,6 +17,8 @@ using Grasshopper.Kernel;
 using Noah.Client;
 using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
+using Grasshopper.GUI.Canvas;
+using Grasshopper;
 
 namespace Noah.CLient
 {
@@ -152,6 +154,20 @@ namespace Noah.CLient
                             DebugEvent("This task is not running!");
                             break;
                         }
+
+                        GH_Canvas activeCanvas = Instances.ActiveCanvas;
+                        if (activeCanvas == null || !activeCanvas.IsDocument)
+                        {
+                            ErrorEvent(this, "No Active Canvas exist!");
+                            return;
+                        }
+
+                        if (activeCanvas.Document.Properties.ProjectFileName != taskData.ID.ToString())
+                        {
+                            DebugEvent("这个任务没有置于前台!");
+                            return;
+                        }
+
                         DebugEvent(taskData.type);
                         noahTask.dataList.Add(taskData);
 

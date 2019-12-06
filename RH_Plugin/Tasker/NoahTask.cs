@@ -47,8 +47,8 @@ namespace Noah.Tasker
 
         public event ErrorHandler ErrorEvent;
         public event TaskDoneHandler DoneEvent;
-        public event InfoHandler InfoEvent;
         public event WarningHandler WarningEvent;
+        public event InfoHandler StoreEvent;
 
         public NoahTask()
         {
@@ -406,6 +406,8 @@ namespace Noah.Tasker
 
                 if (volatileData.IsEmpty) continue;
 
+                dynamic content = null;
+
                 switch (type)
                 {
                     case "CSV":
@@ -422,7 +424,7 @@ namespace Noah.Tasker
 
                             fileName += ".csv";
                             File.WriteAllText(fileName, csv, Encoding.UTF8);
-
+                            content = fileName;
                             break;
                         }
                     case "3DM":
@@ -451,18 +453,17 @@ namespace Noah.Tasker
                             }
 
                             writer.Write();
-
+                            content = fileName;
                             break;
                         }
                     case "Data":
                         {
-                            GH_Structure<IGH_Goo> tree = volatileData as GH_Structure<IGH_Goo>;
                             try
                             {
-                                byte[] bytes = IO.SerializeGrasshopperData(tree, hook.CustomName, volatileData.IsEmpty);
+                                GH_Structure<IGH_Goo> tree = volatileData as GH_Structure<IGH_Goo>;
 
-                                fileName += ".noahdata";
-                                File.WriteAllBytes(fileName, bytes);
+                                content = IO.SerializeGrasshopperData(tree, hook.CustomName, volatileData.IsEmpty);
+
                             } catch(Exception ex)
                             {
                                 ErrorEvent(this, ex.Message);
@@ -474,12 +475,13 @@ namespace Noah.Tasker
                         break;
                 }
 
-                InfoEvent(this, new JObject
+                StoreEvent(this, new JObject
                 {
                     ["route"] = "task-stored",
                     ["id"] = ID.ToString(),
                     ["index"] = index.ToString(),
-                    ["path"] = fileName
+                    ["type"] = type,
+                    ["content"] = content
                 }.ToString());
             }
         }

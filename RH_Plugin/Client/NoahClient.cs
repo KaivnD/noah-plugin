@@ -149,7 +149,7 @@ namespace Noah.CLient
 
                         if (noahTask == null)
                         {
-                            // ErrorEvent(this, "This task is not running!");
+                            DebugEvent("This task is not running!");
                             break;
                         }
                         DebugEvent(taskData.type);
@@ -286,7 +286,7 @@ namespace Noah.CLient
                 HistoryPanel.StoreEvent += HistoryPanel_StoreEvent;
             };
 
-            task.InfoEvent += (sd, json) =>
+            task.StoreEvent += (sd, json) =>
             {
                 Client.Send(json);
             };

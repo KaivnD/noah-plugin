@@ -82,14 +82,14 @@ namespace Noah.UI
 
             RhinoApp.InvokeOnUiThread(new Action(() =>
             {
-                TaskHistory historyGroup = GetHistoryByID(record.ID);
+                TaskHistory historyGroup = GetHistoryByID(record.TaskID);
 
                 if (historyGroup == null)
-                    historyGroup = new TaskHistory(name, record.ID);
+                    historyGroup = new TaskHistory(name, record.TaskID);
 
                 int index = historyGroup.TaskRows.Items.Count + 1;
-
-                TaskRow taskRow = new TaskRow(index, string.Format("{0}({1})", name, record.ID.ToString().Split('-')[0]), record.table, record.ID, record.date.ToString("[MM/dd HH:mm:ss]"), record.taskDatas);
+                // record.date.ToString("[MM/dd HH:mm:ss]")
+                TaskRow taskRow = new TaskRow(index, record);
                 taskRow.RestoreEvent += task => RestoreEvent(task);
                 taskRow.StoreEvent += TaskRow_StoreEvent;
                 historyGroup.AddRow(taskRow);

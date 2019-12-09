@@ -88,7 +88,6 @@
     <Compile Include="Tasker\TaskContent.cs" />
     <Compile Include="Tasker\TaskContentType.cs" />
     <Compile Include="Tasker\TaskData.cs" />
-    <Compile Include="Tasker\TaskGroup.cs" />
     <Compile Include="Tasker\TaskRecord.cs" />
     <Compile Include="Tasker\TaskType.cs" />
     <Compile Include="UI\HistoryPanel.cs" />

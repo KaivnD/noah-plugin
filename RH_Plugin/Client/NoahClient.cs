@@ -33,6 +33,8 @@ namespace Noah.CLient
         private int RetryCnt = 0;
         private int MaxRetry = 5;
 
+        private bool restoreHistory;
+
         public event InfoHandler InfoEvent;
         public event ErrorHandler ErrorEvent;
         public event WarningHandler WarningEvent;
@@ -125,83 +127,89 @@ namespace Noah.CLient
 
         private void Socket_OnMessage(object sender, MessageEventArgs e)
         {
-            ClientEventArgs eve = JsonConvert.DeserializeObject<ClientEventArgs>(e.Data);
-            switch (eve.route)
+            try
             {
-                case ClientEventType.task:
-                    {
-                        NoahTask task = JsonConvert.DeserializeObject<NoahTask>(eve.data);
-
-                        task.SetWorkspace(WorkDir);
-
-                        TaskRunner(task);
-
-                        break;
-                    }
-                case ClientEventType.message:
-                    {
-                        InfoEvent(this, eve.data);
-                        break;
-                    }
-                case ClientEventType.data:
-                    {
-                        TaskData taskData = JsonConvert.DeserializeObject<TaskData>(eve.data);
-
-                        NoahTask noahTask = TaskList.Find(task => Equals(task.ID, taskData.ID));
-
-                        if (noahTask == null)
+                ClientEventArgs eve = JsonConvert.DeserializeObject<ClientEventArgs>(e.Data);
+                switch (eve.route)
+                {
+                    case ClientEventType.task:
                         {
-                            DebugEvent("This task is not running!");
+                            NoahTask task = JsonConvert.DeserializeObject<NoahTask>(eve.data);
+
+                            task.SetWorkspace(WorkDir);
+                            TaskRunner(task);
+
                             break;
                         }
-
-                        GH_Canvas activeCanvas = Instances.ActiveCanvas;
-                        if (activeCanvas == null || !activeCanvas.IsDocument)
+                    case ClientEventType.message:
                         {
-                            ErrorEvent(this, "No Active Canvas exist!");
-                            return;
+                            InfoEvent(this, eve.data);
+                            break;
                         }
-
-                        if (activeCanvas.Document.Properties.ProjectFileName != taskData.ID.ToString())
+                    case ClientEventType.data:
                         {
-                            DebugEvent("这个任务没有置于前台!");
-                            return;
-                        }
+                            TaskData taskData = JsonConvert.DeserializeObject<TaskData>(eve.data);
 
-                        DebugEvent(taskData.type);
-                        noahTask.dataList.Add(taskData);
+                            NoahTask noahTask = TaskList.Find(task => Equals(task.ID, taskData.ID));
 
-                        TaskRunner(noahTask);
-
-                        break;
-                    }
-                case ClientEventType.pick:
-                    {
-                        RhinoApp.InvokeOnUiThread(new Action(() => 
-                        {
-                            var crvs = Picker.PickCurves();
-                            var structrue = new GH_Structure<IGH_Goo>();
-                            crvs.ForEach(crv => structrue.Append(crv));
-
-                            try
+                            if (noahTask == null)
                             {
-                                Client.Send(JsonConvert.SerializeObject(new JObject
-                                {
-                                    ["route"] = "store-picker-data",
-                                    ["guid"] = eve.data,
-                                    ["bytes"] = IO.SerializeGrasshopperData(structrue)
-                                }));
-
-                            } catch (Exception ex)
-                            {
-                                ErrorEvent(this, ex.Message);
+                                DebugEvent("This task is not running!");
+                                break;
                             }
-                            
-                        }));
+
+                            GH_Canvas activeCanvas = Instances.ActiveCanvas;
+                            if (activeCanvas == null || !activeCanvas.IsDocument)
+                            {
+                                ErrorEvent(this, "No Active Canvas exist!");
+                                return;
+                            }
+
+                            if (activeCanvas.Document.Properties.ProjectFileName != taskData.ID.ToString())
+                            {
+                                DebugEvent("这个任务没有置于前台!");
+                                return;
+                            }
+
+                            DebugEvent(taskData.type);
+                            noahTask.dataList.Add(taskData);
+
+                            TaskRunner(noahTask);
+
+                            break;
+                        }
+                    case ClientEventType.pick:
+                        {
+                            RhinoApp.InvokeOnUiThread(new Action(() =>
+                            {
+                                var crvs = Picker.PickCurves();
+                                var structrue = new GH_Structure<IGH_Goo>();
+                                crvs.ForEach(crv => structrue.Append(crv));
+
+                                try
+                                {
+                                    Client.Send(JsonConvert.SerializeObject(new JObject
+                                    {
+                                        ["route"] = "store-picker-data",
+                                        ["guid"] = eve.data,
+                                        ["bytes"] = IO.SerializeGrasshopperData(structrue)
+                                    }));
+
+                                }
+                                catch (Exception ex)
+                                {
+                                    ErrorEvent(this, ex.Message);
+                                }
+
+                            }));
+                            break;
+                        }
+                    default:
                         break;
-                    }
-                default:
-                    break;
+                }
+            } catch (Exception ex)
+            {
+                ErrorEvent(this, ex.Message);
             }
         }
 
@@ -209,6 +217,7 @@ namespace Noah.CLient
         {
             NoahTask noahTask = TaskList.Find(task => Equals(task.ID, taskRow.TaskID));
             if (noahTask == null) return;
+
             string[][] taskTable = JsonConvert.DeserializeObject<string[][]>(taskRow.Table);
 
             List<string> alphaTable = new List<string>();
@@ -257,12 +266,14 @@ namespace Noah.CLient
             if (_task != null)
             {
                 // ErrorEvent(this, "This task is already running!");
+                restoreHistory = false;
                 _task.dataList = task.dataList;
                 _task.BringToFront(restore);
                 return;
             }
 
             TaskList.Add(task);
+            restoreHistory = true;
 
             string taskInstanceName = string.Format("{0}({1})", task.name, task.ID.ToString().Split('-')[0]);
 
@@ -287,19 +298,10 @@ namespace Noah.CLient
                     return;
                 }
 
-                if (HistoryPanel == null) Panels.OpenPanel(HistoryPanel.PanelId);
-
-                HistoryPanel = Panels.GetPanel<HistoryPanel>(RhinoDoc.ActiveDoc);
-                
-                if(!isRestore) HistoryPanel.AddHistory(noahTask.name, noahTask.history.Last());
+                if (!isRestore) RestoreHistoryPanel(noahTask);
 
                 InfoEvent(noahTask, string.Format("{0} " + (isRestore ? "已恢复" : "完成"), taskInstanceName));
 
-                HistoryPanel.RestoreEvent -= HistoryPanel_RestoreEvent;
-                HistoryPanel.RestoreEvent += HistoryPanel_RestoreEvent;
-
-                HistoryPanel.StoreEvent -= HistoryPanel_StoreEvent;
-                HistoryPanel.StoreEvent += HistoryPanel_StoreEvent;
             };
 
             task.StoreEvent += (sd, json) =>
@@ -308,6 +310,37 @@ namespace Noah.CLient
             };
 
             task.Run();
+        }
+
+        private void RestoreHistoryPanel(NoahTask task, bool endOfTask = true)
+        {
+            DebugEvent(string.Format("Restoring {0} History", task.name));
+            RhinoApp.InvokeOnUiThread(new Action(() => 
+            {
+                if (HistoryPanel == null) Panels.OpenPanel(HistoryPanel.PanelId);
+
+                HistoryPanel = Panels.GetPanel<HistoryPanel>(RhinoDoc.ActiveDoc);
+
+                if (restoreHistory)
+                {
+                    if (task.history.Count > 0)
+                    {
+                        DebugEvent(string.Format("{0} Has {1} History", task.name, task.history.Count));
+                        HistoryPanel.SetHistory(task.name, task.history);
+                        restoreHistory = false;
+                    }
+                } else
+                {
+                    DebugEvent(string.Format("Pushing {0} History", task.name));
+                    HistoryPanel.AddHistory(task.name, task.history.Last());
+                }
+
+                HistoryPanel.RestoreEvent -= HistoryPanel_RestoreEvent;
+                HistoryPanel.RestoreEvent += HistoryPanel_RestoreEvent;
+
+                HistoryPanel.StoreEvent -= HistoryPanel_StoreEvent;
+                HistoryPanel.StoreEvent += HistoryPanel_StoreEvent;
+            }));
         }
 
         private void HistoryPanel_StoreEvent(TaskRow taskRow)
@@ -320,7 +353,8 @@ namespace Noah.CLient
                 ["title"] = taskRow.title,
                 ["memo"] = taskRow.memo,
                 ["table"] = taskRow.Table,
-                ["thumbnail"] = taskRow.Bitmap.ToByteArray(ImageFormat.Png),
+                ["taskData"] = JsonConvert.SerializeObject(taskRow.TaskDatas),
+                ["thumbnail"] = taskRow.thumbnail.ToByteArray(ImageFormat.Png),
                 ["img"] = taskRow.BigBitmap.ToByteArray(ImageFormat.Png)
             }));
         }

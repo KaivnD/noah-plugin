@@ -13,13 +13,13 @@ namespace Noah.UI
 {
     public class TaskRow : DynamicLayout
     {
-        public readonly string Table;
-        public readonly Bitmap Bitmap;
-        public readonly Bitmap BigBitmap;
-        public readonly Guid TaskID;
-        public readonly string TaskName;
-        public readonly Guid HistoryID;
-        public readonly List<TaskData> TaskDatas;
+        public string Table;
+        public Bitmap thumbnail;
+        public Bitmap BigBitmap;
+        public Guid TaskID;
+        public string TaskName;
+        public Guid HistoryID;
+        public List<TaskData> TaskDatas { set; get; }
         public string title;
         public string memo;
 
@@ -27,29 +27,51 @@ namespace Noah.UI
         public event TaskRowHandler RestoreEvent;
         public event TaskRowHandler StoreEvent;
 
-        public TaskRow(int index, string name, string table, Guid guid, string datetime, List<TaskData> datas)
+        public TaskRow(int index, TaskRecord record)
         {
-            HistoryID = Guid.NewGuid();
-            Table = table;
-            TaskDatas = datas;
-            var view = Rhino.RhinoDoc.ActiveDoc.Views.ActiveView;
+
+            Table = record.table;
+            TaskID = record.TaskID;
+            TaskName = string.Format("{0}({1})", record.name, record.TaskID.ToString().Split('-')[0]);
+            HistoryID = record.HistoryID;
+
+            TaskDatas = JsonConvert.DeserializeObject<List<TaskData>>(record.taskDatas);
+
+            if (record.title != null)
+            {
+                title = record.title;
+            }
+
+            if (record.memo != null)
+            {
+                memo = record.memo;
+            }
+
+            if (record.thumbnail == null || record.bigImage == null)
+            {
+                var view = Rhino.RhinoDoc.ActiveDoc.Views.ActiveView;
+                thumbnail = Rhino.UI.EtoExtensions.ToEto(view.CaptureToBitmap(new System.Drawing.Size(120, 90)));
+                BigBitmap = Rhino.UI.EtoExtensions.ToEto(view.CaptureToBitmap(new System.Drawing.Size(360, 270)));
+            } else
+            {
+                thumbnail = new Bitmap(record.thumbnail);
+                BigBitmap = new Bitmap(record.bigImage);
+            }
+
             Padding = new Padding(3);
             Size = new Size(-1, -1);
 
-            TaskName = name;
-
-            TaskID = guid;
-
-            Bitmap = Rhino.UI.EtoExtensions.ToEto(view.CaptureToBitmap(new System.Drawing.Size(120, 90)));
-            BigBitmap = Rhino.UI.EtoExtensions.ToEto(view.CaptureToBitmap(new System.Drawing.Size(360, 270)));
             BeginVertical(); // buttons section
             BeginHorizontal();
-            Add(new ImageView() { Image = Bitmap });
+            Add(new ImageView() { Image = thumbnail });
             var layout = new DynamicLayout
             {
                 Padding = new Padding(5),
             };
-            layout.AddRow(null, new Label() { Text = "#" + index });
+
+            if (title != null) layout.AddRow(null, new Label { Text = title });
+            else layout.AddRow(null, new Label { Text = "#" + index });
+
             Add(layout);
             EndHorizontal();
             EndVertical();

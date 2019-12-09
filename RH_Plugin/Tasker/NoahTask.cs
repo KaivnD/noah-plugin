@@ -5,6 +5,7 @@ using Grasshopper.Kernel;
 using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Special;
 using Grasshopper.Kernel.Types;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Noah.Utils;
 using Rhino;
@@ -28,7 +29,7 @@ namespace Noah.Tasker
         public List<TaskData> dataList { get; set; }
         public List<TaskData> results { get; }
 
-        public List<TaskRecord> history;
+        public List<TaskRecord> history { set; get; }
 
         public string workspace { set; get; }
 
@@ -233,8 +234,16 @@ namespace Noah.Tasker
             if (!restore)
             {
                 var rndData = dataList.FindAll(data => data.type == "4" || data.type == "5");
-                var record = new TaskRecord() { ID = ID, date = DateTime.Now, table = dataTable, taskDatas = rndData };
-                history.Add(record);
+
+                history.Add(new TaskRecord
+                {
+                    name = name,
+                    TaskID = ID,
+                    HistoryID = Guid.NewGuid(),
+                    date = DateTime.Now,
+                    table = dataTable,
+                    taskDatas = JsonConvert.SerializeObject(rndData)
+                });
             }
 
             foreach (var hook in hooks)

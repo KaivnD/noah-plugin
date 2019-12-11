@@ -22,14 +22,16 @@ namespace Noah.UI
         public List<TaskData> TaskDatas { set; get; }
         public string title;
         public string memo;
+        public int RowIndex;
 
         public delegate void TaskRowHandler(TaskRow taskRow);
         public event TaskRowHandler RestoreEvent;
         public event TaskRowHandler StoreEvent;
+        public event TaskRowHandler DeleteEvent;
 
         public TaskRow(int index, TaskRecord record)
         {
-
+            RowIndex = index;
             Table = record.table;
             TaskID = record.TaskID;
             TaskName = string.Format("{0}({1})", record.name, record.TaskID.ToString().Split('-')[0]);
@@ -60,22 +62,15 @@ namespace Noah.UI
 
             Padding = new Padding(3);
             Size = new Size(-1, -1);
+            
+            CreateContent();
+            MouseEnter += TaskRow_MouseEnter;
+            MouseLeave += TaskRow_MouseLeave;
+            MouseDoubleClick += (sd, e) => RestoreEvent(this);
+        }
 
-            BeginVertical(); // buttons section
-            BeginHorizontal();
-            Add(new ImageView() { Image = thumbnail });
-            var layout = new DynamicLayout
-            {
-                Padding = new Padding(5),
-            };
-
-            if (title != null) layout.AddRow(null, new Label { Text = title });
-            else layout.AddRow(null, new Label { Text = "#" + index });
-
-            Add(layout);
-            EndHorizontal();
-            EndVertical();
-
+        private void CreateContent()
+        {
             var restoreBtn = new ButtonMenuItem
             {
                 Text = "恢复"
@@ -97,18 +92,45 @@ namespace Noah.UI
 
             storeBtn.Click += StoreBtn_Click;
 
-            var menu = new ContextMenu(new MenuItem[] 
+            var delBtn = new ButtonMenuItem
+            {
+                Text = "删除"
+            };
+
+            delBtn.Click += (sd, e) => DeleteEvent(this);
+
+            var menu = new ContextMenu(new MenuItem[]
             {
                 restoreBtn,
                 detailMenu,
-                storeBtn
+                storeBtn,
+                delBtn
             });
 
             ContextMenu = menu;
 
-            MouseEnter += TaskRow_MouseEnter;
-            MouseLeave += TaskRow_MouseLeave;
-            MouseDoubleClick += (sd, e) => RestoreEvent(this);
+            BeginVertical(); // buttons section
+            BeginHorizontal();
+            Add(new ImageView() { Image = thumbnail });
+            var layout = new DynamicLayout
+            {
+                Padding = new Padding(5),
+            };
+
+            if (title != null)
+            {
+                layout.AddRow(null, new Label { Text = title });
+                storeBtn.Enabled = false;
+            }
+            else
+            {
+                layout.AddRow(null, new Label { Text = "#" + RowIndex });
+                storeBtn.Enabled = true;
+            }
+
+            Add(layout);
+            EndHorizontal();
+            EndVertical();
         }
 
         private void StoreBtn_Click(object sender, EventArgs e)
@@ -118,7 +140,9 @@ namespace Noah.UI
             {
                 title = _title;
                 memo = _memo;
-
+                Clear();
+                CreateContent();
+                Create();
                 StoreEvent(this);
             };
 

@@ -14,6 +14,8 @@ namespace Noah.UI
 
         private bool folded;
 
+        private readonly ButtonMenuItem foldButton;
+
         public TaskHistory(string name, Guid id)
         {
             TaskID = id;
@@ -25,16 +27,48 @@ namespace Noah.UI
             Text = name + "("+ id.ToString().Split('-')[0] + ")";
             Size = new Size(-1, -1);
 
-            // TODO FIX 折叠事件冒泡问题
-            // MouseDown += TaskHistory_MouseDown;
+            // TODO 清空问题
+            //var clearButton = new ButtonMenuItem
+            //{
+            //    Text = "清空"
+            //};
+
+            //clearButton.Click += ClearButton_Click;
+
+            foldButton = new ButtonMenuItem
+            {
+                Text = "折叠"
+            };
+
+            foldButton.Click += FoldButton_Click;
+
+            var menu = new ContextMenu(new MenuItem[]
+            {
+                foldButton
+            });
+
+            ContextMenu = menu;
         }
 
-        private void TaskHistory_MouseDown(object sender, MouseEventArgs e)
+        private void FoldButton_Click(object sender, EventArgs e)
         {
-            if (!folded) Content = null;
-            else Content = TaskRows;
+            if (!folded)
+            {
+                Content = null;
+                foldButton.Text = "展开";
+            }
+            else
+            {
+                Content = TaskRows;
+                foldButton.Text = "折叠";
+            }
 
             folded = !folded;
+        }
+
+        private void ClearButton_Click(object sender, EventArgs e)
+        {
+            TaskRows.Items.Clear();
         }
 
         public void AddRow (TaskRow task)

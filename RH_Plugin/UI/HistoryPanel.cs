@@ -27,6 +27,7 @@ namespace Noah.UI
         public delegate void TaskRowHandler(TaskRow taskRow);
         public event TaskRowHandler RestoreEvent;
         public event TaskRowHandler StoreEvent;
+        public event TaskRowHandler DeleteEvent;
 
         /// <summary>
         /// 用于记录所有运行历史
@@ -92,11 +93,27 @@ namespace Noah.UI
                 TaskRow taskRow = new TaskRow(index, record);
                 taskRow.RestoreEvent += task => RestoreEvent(task);
                 taskRow.StoreEvent += TaskRow_StoreEvent;
+                taskRow.DeleteEvent += TaskRow_DeleteEvent;
                 historyGroup.AddRow(taskRow);
 
                 if (historyGroup.TaskRows.Items.Count == 1)
                     StackLayout.Items.Add(new StackLayoutItem(historyGroup));
             }));
+        }
+
+        private void TaskRow_DeleteEvent(TaskRow taskRow)
+        {
+            TaskHistory historyGroup = GetHistoryByID(taskRow.TaskID);
+            var items = historyGroup.TaskRows.Items;
+            StackLayoutItem tobedel = null;
+            foreach(var item in items)
+            {
+                if (!(item.Control is TaskRow row) || !Equals(row.HistoryID, taskRow.HistoryID)) continue;
+                tobedel = item;
+            }
+
+            if (tobedel != null) historyGroup.TaskRows.Items.Remove(tobedel);
+            DeleteEvent(taskRow);
         }
 
         private void TaskRow_StoreEvent(TaskRow taskRow)

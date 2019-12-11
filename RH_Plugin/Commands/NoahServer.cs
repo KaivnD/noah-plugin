@@ -51,17 +51,6 @@ namespace Noah.Commands
 
         protected override Result RunCommand(RhinoDoc doc, RunMode mode)
         {
-            try
-            {
-                if (Logger == null) Panels.OpenPanel(LoggerPanel.PanelId);
-                Logger = Panels.GetPanel<LoggerPanel>(doc);
-            }
-            catch (Exception ex)
-            {
-                RhinoApp.WriteLine("Error: " + ex.Message);
-            }
-
-
             if (!(RhinoApp.GetPlugInObject("Grasshopper") is GH_RhinoScriptInterface Grasshopper))
             {
                 return Result.Cancel;
@@ -133,7 +122,18 @@ namespace Noah.Commands
                     }
                     else Client.Reconnect();
 
-
+                    if (Debug)
+                    {
+                        try
+                        {
+                            if (Logger == null) Panels.OpenPanel(LoggerPanel.PanelId);
+                            Logger = Panels.GetPanel<LoggerPanel>(doc);
+                        }
+                        catch (Exception ex)
+                        {
+                            RhinoApp.WriteLine("Error: " + ex.Message);
+                        }
+                    }
 
                     if (ShowEditor) Grasshopper.ShowEditor();
 
@@ -179,23 +179,26 @@ namespace Noah.Commands
 
         private void Client_DebugEvent(string message)
         {
+            if (Logger == null) return;
             if (!Debug) return;
             Logger.Debug(message);
         }
 
         private void Client_WarningEvent(object sender, string message)
         {
+            if (Logger == null) return;
             Logger.Warning(message);
         }
 
         private void Client_ErrorEvent(object sender, string message)
         {
+            if (Logger == null) return;
             Logger.Error(message);
         }
 
         private void Client_MessageEvent(object sender, string message)
         {
-            
+            if (Logger == null) return;
             Logger.Info(message);
         }
     }

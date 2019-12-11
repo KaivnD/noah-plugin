@@ -340,6 +340,18 @@ namespace Noah.CLient
 
                 HistoryPanel.StoreEvent -= HistoryPanel_StoreEvent;
                 HistoryPanel.StoreEvent += HistoryPanel_StoreEvent;
+
+                HistoryPanel.DeleteEvent -= HistoryPanel_DeleteEvent;
+                HistoryPanel.DeleteEvent += HistoryPanel_DeleteEvent;
+            }));
+        }
+
+        private void HistoryPanel_DeleteEvent(TaskRow taskRow)
+        {
+            Client.Send(JsonConvert.SerializeObject(new JObject
+            {
+                ["route"] = "history-delete",
+                ["id"] = taskRow.HistoryID.ToString()
             }));
         }
 

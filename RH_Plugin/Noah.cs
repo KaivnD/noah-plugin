@@ -25,14 +25,10 @@ namespace Noah
             get; private set;
         }
 
-        // You can override methods here to change the plug-in behavior on
-        // loading and shut down, add options pages to the Rhino _Option command
-        // and maintain plug-in wide options in a document.
-
         protected override LoadReturnCode OnLoad(ref string errorMessage)
         {
-            Rhino.UI.Panels.RegisterPanel(this, typeof(HistoryPanel), "Noah Tasker", null);
-            Rhino.UI.Panels.RegisterPanel(this, typeof(LoggerPanel), "Noah Logger", null);
+            Rhino.UI.Panels.RegisterPanel(this, typeof(HistoryPanel), "Noah 时光机", null);
+            Rhino.UI.Panels.RegisterPanel(this, typeof(LoggerPanel), "Noah 记录本", null);
             return LoadReturnCode.Success;
         }
     }

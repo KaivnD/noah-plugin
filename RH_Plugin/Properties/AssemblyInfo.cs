@@ -21,14 +21,14 @@ using Rhino.PlugIns;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("RH_Plugin")]
+[assembly: AssemblyTitle("Noah Sever Rhino Plugin")]
 
 // This will be used also for the plug-in description.
-[assembly: AssemblyDescription("RH_Plugin utility plug-in")]
+[assembly: AssemblyDescription("Noah Sever Rhino Plugin")]
 
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("RH_Plugin")]
+[assembly: AssemblyProduct("Noah Sever Rhino Plugin")]
 [assembly: AssemblyCopyright("Copyright ©  2019")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]

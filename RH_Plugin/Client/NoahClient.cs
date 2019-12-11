@@ -173,6 +173,7 @@ namespace Noah.CLient
 
                             DebugEvent(taskData.type);
                             noahTask.dataList.Add(taskData);
+                            noahTask.dataTable = taskData.table;
 
                             TaskRunner(noahTask);
 

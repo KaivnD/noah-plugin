@@ -184,6 +184,8 @@ namespace Noah.CLient
                             RhinoApp.InvokeOnUiThread(new Action(() =>
                             {
                                 var crvs = Picker.PickCurves();
+                                if (crvs == null) return;
+
                                 var structrue = new GH_Structure<IGH_Goo>();
                                 crvs.ForEach(crv => structrue.Append(crv));
 

@@ -17,17 +17,20 @@ namespace Noah.Client
     {
         public static List<GH_Curve> PickCurves()
         {
-            GetObject getObject;
+            GetObject go;
             while (true)
             {
-                getObject = new GetObject();
-                getObject.SetCommandPrompt("Pick a Curve");
-                getObject.GeometryFilter = ObjectType.Curve | ObjectType.EdgeFilter;
+                go = new GetObject();
+                go.AcceptNothing(true);
+                go.AcceptEnterWhenDone(true);
+                go.SetCommandPrompt("请选择一条或多条曲线");
+                go.GeometryFilter = ObjectType.Curve | ObjectType.EdgeFilter;
 
-                if (getObject.GetMultiple(1, 0) != GetResult.Object) continue;
+                if (go.GetMultiple(1, 0) != GetResult.Object) return null;
 
                 List<GH_Curve> ghCurveList1 = new List<GH_Curve>();
-                Array.ForEach(getObject.Objects(), (ObjRef obj) => ghCurveList1.Add(new GH_Curve(obj.Curve())));
+                Array.ForEach(go.Objects(), (ObjRef obj) => ghCurveList1.Add(new GH_Curve(obj.Curve())));
+                if (ghCurveList1.Count == 0) return null;
                 return ghCurveList1;
             }
         }

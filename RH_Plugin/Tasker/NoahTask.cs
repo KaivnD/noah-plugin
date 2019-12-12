@@ -45,6 +45,7 @@ namespace Noah.Tasker
         public delegate void TaskDoneHandler(object sender, string message, bool restore = false);
 
         private bool IsTaskRestore;
+        public int RunningCnt = 0;
 
         public event ErrorHandler ErrorEvent;
         public event TaskDoneHandler DoneEvent;
@@ -125,7 +126,8 @@ namespace Noah.Tasker
             try
             {
                 StoreOutput();
-                Zoom();
+                if (RunningCnt == 0) Zoom();
+                ++RunningCnt;
             } catch(Exception ex)
             {
                 ErrorEvent(sender, ex.Message);

@@ -13,6 +13,7 @@ using Cairo;
 using Surface = Cairo.Surface;
 using Eto.Forms;
 using Command = Rhino.Commands.Command;
+using Noah.Utils;
 
 namespace Noah.Commands
 {
@@ -41,104 +42,88 @@ namespace Noah.Commands
             if (!boundCrv.IsPlanar() || !boundCrv.IsPolyline() || !boundCrv.IsClosed) return Result.Failure;
             
             boundCrv.GetBoundingBox(Plane.WorldXY, out Box bound);
-            double width = bound.X.Max - bound.X.Min;
-            double height = bound.Y.Max - bound.Y.Min;
 
-            List<Curve> crvs = new List<Curve>();
+            List<RhinoObject> objs = new List<RhinoObject>();
 
             foreach (var obj in doc.Objects)
             {
                 obj.Geometry.GetBoundingBox(Plane.WorldXY, out Box objBox);
                 if (!bound.Contains(objBox.Center) || 
-                    !(obj.Geometry is Curve crv) || 
-                    !crv.IsPlanar() ||
                     Equals(objBox, bound)) continue;
-                
+
+                if (!(obj.Geometry is Curve crv) ||
+                    !crv.IsPlanar()) continue;
                 if (bound.X.IncludesInterval(objBox.X) && bound.Y.IncludesInterval(objBox.Y))
                 {
-                    crvs.Add(crv);
+                    objs.Add(obj);
                     obj.Select(true);
                 }
             }
 
-            if (crvs.Count == 0) return Result.Cancel;
+            if (objs.Count == 0) return Result.Cancel;
 
             var dialog = new SaveFileDialog()
             {
                 Title = "保存位置",
-                Filters =
-                {
-                    new FileFilter("eps file", new string[] {"eps"})
-                }
+                Filters = { new FileFilter("Encapsulated PostScript File", new string[] { "eps" }) }
             };
 
             DialogResult res = dialog.ShowDialog(Rhino.UI.RhinoEtoApp.MainWindow);
             
             if (res == DialogResult.Ok)
             {
-               
                 string savePath = dialog.FileName + "." + dialog.CurrentFilter.Extensions[0];
-                int prograss = 0;
-                using (Surface surface = new PSSurface(savePath, width, height))
+
+                try
                 {
-                    using (var c = new Context(surface))
-                    {
-                        //c.Translate(bound.X.Min, bound.Y.Min);
-                        c.Antialias = Antialias.Subpixel;
-                        c.SetSourceColor(new Color(0, 0, 0, 1));
-
-                        c.LineWidth = 0.1;
-
-                        c.Rectangle(0, 0, width, height);
-                        c.Stroke();
-
-                        foreach (var crv in crvs)
-                        {
-                            ++prograss;
-                            if (crv.TryGetArc(out Arc arc))
-                            {
-                                c.Arc(arc.Center.X, height - arc.Center.Y, arc.Radius, arc.StartAngle, arc.EndAngle);
-                                c.Stroke();
-                            }
-                            else if (crv.TryGetCircle(out Circle circle))
-                            {
-                                c.Arc(circle.Center.X, height - circle.Center.Y, circle.Radius, 0, 2 * Math.PI);
-                                c.Stroke();
-                            }
-                            else if (crv.TryGetEllipse(out Ellipse ellipse))
-                            {
-                                continue;
-                            }
-                            else if (crv.TryGetPolyline(out Polyline pts))
-                            {
-                                var sPt = pts[0];
-                                c.MoveTo(sPt.X, height - sPt.Y);
-                                pts.ForEach(pt =>
-                                {
-                                    if (pts.IndexOf(pt) > 0)
-                                    {
-                                        c.LineTo(pt.X, height - pt.Y);
-                                    }
-                                });
-                                if (pts.IsClosed) c.LineTo(sPt.X, height - sPt.Y);
-                                c.Stroke();
-                            }
-                            else
-                            {
-
-                            }                            
-                            RhinoApp.WriteLine($"已完成 {(double)prograss / crvs.Count * 100} %");
-                        }
-                    }
+                    var eps = new EncapsulatedPostScript(bound);
+                    eps.Save(objs, savePath);
+                    RhinoApp.WriteLine($"已写入{objs.Count}个物件至{savePath}");
+                } catch (Exception ex)
+                {
+                    RhinoApp.WriteLine(ex.Message);
                 }
-
-                RhinoApp.WriteLine(savePath);
-
+                
+                doc.Objects.UnselectAll();
+                doc.Views.Redraw();
             }
 
-            doc.Objects.UnselectAll();
-
             return Result.Success;
+        }
+
+        /// <summary>
+        /// Recursive function to print the contents of an instance definition
+        /// </summary>
+        protected void DumpInstanceDefinition(InstanceDefinition idef, ref int indent)
+        {
+            if (null != idef && !idef.IsDeleted)
+            {
+                const string line = "\u2500";
+                const string corner = "\u2514";
+
+                var node = (0 == indent) ? line : corner;
+                var str = new string(' ', indent * 2);
+                RhinoApp.WriteLine($"{str}{node} Instance definition {idef.Index} = {idef.Name}");
+
+                var idef_object_count = idef.ObjectCount;
+                if (idef_object_count > 0)
+                {
+                    indent++;
+                    str = new string(' ', indent * 2);
+                    for (var i = 0; i < idef_object_count; i++)
+                    {
+                        var obj = idef.Object(i);
+                        if (null != obj)
+                        {
+                            if (obj is InstanceObject iref)
+                                DumpInstanceDefinition(iref.InstanceDefinition, ref indent);
+                            else
+                                RhinoApp.WriteLine($"{str}{corner} Object {i} = {obj.ShortDescription(false)}\n");
+                        }
+                    }
+                    indent--;
+                }
+            }
         }
     }
 }

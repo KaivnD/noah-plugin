@@ -100,6 +100,7 @@
     <Compile Include="UI\LoggerPanel.cs" />
     <Compile Include="UI\HistoryDetialWindow.cs" />
     <Compile Include="Utils\DocObjectBaker.cs" />
+    <Compile Include="Utils\EncapsulatedPostScript.cs" />
     <Compile Include="Utils\EventHandler.cs" />
     <Compile Include="Utils\File3dmWriter.cs" />
     <Compile Include="Utils\IO.cs" />

@@ -25,6 +25,13 @@ namespace Noah.Commands
             get { return "ToEps"; }
         }
 
+        private readonly ObjectType[] SupportObjectTypes =
+        {
+            ObjectType.Curve,
+            ObjectType.Brep,
+            ObjectType.Annotation
+        };
+
         protected override Result RunCommand(RhinoDoc doc, RunMode mode)
         {
             GetObject go;
@@ -43,7 +50,7 @@ namespace Noah.Commands
             
             boundCrv.GetBoundingBox(Plane.WorldXY, out Box bound);
 
-            List<RhinoObject> objs = new List<RhinoObject>();
+            List<GeometryBase> objs = new List<GeometryBase>();
 
             foreach (var obj in doc.Objects)
             {
@@ -51,13 +58,15 @@ namespace Noah.Commands
                 if (!bound.Contains(objBox.Center) || 
                     Equals(objBox, bound)) continue;
 
-                if (!(obj.Geometry is Curve crv) ||
-                    !crv.IsPlanar()) continue;
-                if (bound.X.IncludesInterval(objBox.X) && bound.Y.IncludesInterval(objBox.Y))
-                {
-                    objs.Add(obj);
-                    obj.Select(true);
-                }
+                RhinoApp.WriteLine(obj.ObjectType.ToString());
+
+                if (!SupportObjectTypes.Contains(obj.ObjectType)) continue;
+
+                if (!bound.X.IncludesInterval(objBox.X) ||
+                    !bound.Y.IncludesInterval(objBox.Y)) continue;
+
+                objs.Add(obj.Geometry);
+                obj.Select(true);
             }
 
             if (objs.Count == 0) return Result.Cancel;
@@ -76,8 +85,8 @@ namespace Noah.Commands
 
                 try
                 {
-                    var eps = new EncapsulatedPostScript(bound);
-                    eps.Save(objs, savePath);
+                    var eps = new EncapsulatedPostScript(bound, savePath);
+                    eps.SaveEPS(objs);
                     RhinoApp.WriteLine($"已写入{objs.Count}个物件至{savePath}");
                 } catch (Exception ex)
                 {

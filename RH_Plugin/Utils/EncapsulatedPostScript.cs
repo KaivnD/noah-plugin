@@ -3,6 +3,7 @@ using Rhino.DocObjects;
 using Rhino.Geometry;
 using System;
 using System.Collections.Generic;
+using System.Text;
 using Surface = Cairo.Surface;
 
 namespace Noah.Utils
@@ -10,60 +11,119 @@ namespace Noah.Utils
     public class EncapsulatedPostScript
     {
         public Box Bound;
+        private readonly string FilePath;
         private readonly double Width;
         private readonly double Height;
 
-        public EncapsulatedPostScript(Box box)
+        public EncapsulatedPostScript(Box box, string path)
         {
             Bound = box;
+            FilePath = path;
 
             Width = Bound.X.Max - Bound.X.Min;
             Height = Bound.Y.Max - Bound.Y.Min;
         }
 
-        public void Save(List<RhinoObject> geometries, string path)
+        public void SavePDF(SortedDictionary<int, List<GeometryBase>> geometries)
         {
-            if (!Bound.IsValid) throw new Exception("No Bound Box");
-            if (string.IsNullOrEmpty(path)) throw new Exception("Save Path is required");
-
-            using (Surface surface = new PSSurface(path, Width, Height))
+            using (Surface surface = new PdfSurface(FilePath, Width, Height))
+            using (var c = new Context(surface))
             {
-                using (var c = new Context(surface))
+                DefaultContext(c, false);
+                foreach (KeyValuePair<int, List<GeometryBase>> page in geometries)
                 {
-                    c.Antialias = Antialias.Subpixel;
-                    c.SetSourceColor(new Color(0, 0, 0, 1));
+                    Save(page.Value, c);
+                    c.ShowPage();
+                }
+                surface.Finish();
+            }
+        }
 
-                    c.LineWidth = 0.1;
+        public void SaveEPS(List<GeometryBase> geometries)
+        {            
+            using (Surface surface = new PSSurface(FilePath, Width, Height))
+            using (var c = new Context(surface))
+            {
+                DefaultContext(c);
+                Save(geometries, c);
+                surface.Finish();
+            }
+        }
 
-                    c.Rectangle(0, 0, Width, Height);
-                    c.Stroke();
+        private void Save(List<GeometryBase> geometries, Context c)
+        {        
 
-                    c.Translate(-Bound.X.Min, Bound.Y.Min);
+            foreach (var obj in geometries)
+            {
+                if (obj == null || obj.GetBoundingBox(false).Corner(true, true, true).Z > 0) continue;
 
-                    foreach (var obj in geometries)
-                    {
-                        switch (obj.ObjectType)
-                        {
-                            case ObjectType.Curve:
-                                DrawCurve(c, obj.Geometry as Curve);
-                                break;
-                            case ObjectType.Point:
-                            case ObjectType.Surface:
-                            case ObjectType.Mesh:
-                            case ObjectType.Hatch:
-                            case ObjectType.InstanceReference:
-                            case ObjectType.InstanceDefinition:
-                            case ObjectType.TextDot:
-                            default:
-                                break;
-                        }
-                    }
+                switch (obj.ObjectType)
+                {
+                    case ObjectType.Curve:
+                        DrawCurve(c, obj as Curve);
+                        break;
+                    case ObjectType.Annotation:
+                        DrawAnnotation(c, obj);
+                        break;
+                    case ObjectType.Brep:
+                    case ObjectType.Hatch:
+                    case ObjectType.InstanceReference:
+                    case ObjectType.InstanceDefinition:
+                    default:
+                        break;
                 }
             }
         }
 
-        private void DrawCurve(Context c, Curve crv)
+        private void DefaultContext(Context c, bool drawBound = true)
         {
+            c.Antialias = Antialias.Subpixel;
+            c.SetSourceColor(new Color(0, 0, 0, 1));
+
+            c.LineWidth = 0.1;
+
+            if (drawBound)
+            {
+                c.Rectangle(0, 0, Width, Height);
+                c.Stroke();
+            }
+
+            c.Translate(-Bound.X.Min, Bound.Y.Min);
+        }
+
+        private void DrawBrep(Context c, Brep brep)
+        {            
+            if (brep.Faces.Count > 1 || !brep.Faces[0].IsPlanar()) return;
+            // TODO 曲面边界填充
+            Curve[] curves = brep.DuplicateEdgeCurves(true);
+            double tol = Rhino.RhinoDoc.ActiveDoc.ModelAbsoluteTolerance * 2.1;
+            curves = Curve.JoinCurves(curves, tol);
+            Array.ForEach(curves, crv => DrawCurve(c, crv, DrawCurveMode.Fill));
+        }
+
+        private void DrawAnnotation(Context c, GeometryBase obj)
+        {
+            if (!(obj is AnnotationBase text)) return;
+            Font font = text.Font;
+            c.SelectFontFace(font.FamilyName, FontSlant.Normal, FontWeight.Normal);
+
+            text.GetBoundingBox(Plane.WorldXY, out Box box);
+            c.SetFontSize(text.TextHeight);
+            c.MoveTo(box.X.Min, Height - box.Y.Min);
+            c.ShowText(text.PlainText);
+        }
+
+        public enum DrawCurveMode
+        {
+            Stroke,
+            Fill,
+            Both
+        }
+
+        private void DrawCurve(Context c, Curve crv, DrawCurveMode mode = DrawCurveMode.Stroke)
+        {
+            if (!crv.IsPlanar()) return;
+
             if (crv.TryGetArc(out Arc arc))
             {
                 c.Arc(arc.Center.X, Height - arc.Center.Y, arc.Radius, arc.StartAngle, arc.EndAngle);
@@ -77,26 +137,98 @@ namespace Noah.Utils
             }
             else if (crv.TryGetPolyline(out Polyline pts))
             {
-                var sPt = pts[0];
-                c.MoveTo(sPt.X, Height - sPt.Y);
-                pts.ForEach(pt =>
-                {
-                    if (pts.IndexOf(pt) > 0)
-                    {
-                        c.LineTo(pt.X, Height - pt.Y);
-                    }
-                });
-                if (pts.IsClosed) c.LineTo(sPt.X, Height - sPt.Y);
+                DrawPolyline(c, pts);
             }
             else if (crv is PolyCurve polyCurve)
             {
-
+                Curve[] segments = polyCurve.Explode();
+                if (segments == null || segments.Length == 0) return;
+                Array.ForEach(segments, seg => DrawCurve(c, seg.DuplicateShallow() as Curve));
             }
-            else
+            else if (crv is PolylineCurve polyline)
+            {
+                DrawPolyline(c, polyline.ToPolyline());
+            } else
             {
 
             }
-            c.Stroke();
+
+            if (mode == DrawCurveMode.Stroke) c.Stroke();
+            else if (mode == DrawCurveMode.Fill) c.Fill();
+        }
+
+        public void DrawPolyline(Context c, Polyline pl)
+        {
+            var sPt = pl[0];
+            c.MoveTo(sPt.X, Height - sPt.Y);
+            pl.ForEach(pt =>
+            {
+                if (pl.IndexOf(pt) > 0)
+                {
+                    c.LineTo(pt.X, Height - pt.Y);
+                }
+            });
+            if (pl.IsClosed) c.LineTo(sPt.X, Height - sPt.Y);
+        }
+
+        public static bool MakeCurveSegments(ref List<Curve> cList, Curve crv, bool recursive)
+        {
+            if (crv is PolyCurve polycurve)
+            {
+                if (recursive) polycurve.RemoveNesting();
+                Curve[] segments = polycurve.Explode();
+                if (segments == null || segments.Length == 0) return false;
+                if (recursive) foreach (Curve segment in segments) MakeCurveSegments(ref cList, segment, recursive);
+                else foreach (Curve segment in segments) cList.Add(segment.DuplicateShallow() as Curve);
+                return true;
+            }
+
+            if (crv is PolylineCurve polyline)
+            {
+                if (recursive)
+                {
+                    for (int i = 0; i < (polyline.PointCount - 1); i++) cList.Add(new LineCurve(polyline.Point(i), polyline.Point(i + 1)));
+                }
+                else cList.Add(polyline.DuplicateCurve());
+                return true;
+            }
+
+            if (crv.TryGetPolyline(out Polyline p))
+            {
+                if (recursive)
+                {
+                    for (int i = 0; i < (p.Count - 1); i++) cList.Add(new LineCurve(p[i], p[i + 1]));
+                }
+                else cList.Add(new PolylineCurve(p));
+                return true;
+            }
+
+            if (crv is LineCurve line) { cList.Add(line.DuplicateCurve()); return true; }
+
+            if (crv is ArcCurve arc) { cList.Add(arc.DuplicateCurve()); return true; }
+
+            NurbsCurve nurbs = crv.ToNurbsCurve();
+            if (nurbs == null) return false;
+
+            double t0 = nurbs.Domain.Min; double t1 = nurbs.Domain.Max; 
+            int cListCount = cList.Count;
+
+            do
+            {
+                if (!nurbs.GetNextDiscontinuity(Continuity.C1_locus_continuous, t0, t1, out double t)) break;
+
+                Interval trim = new Interval(t0, t);
+                if (trim.Length < 1e-10) { t0 = t; continue; }
+
+                Curve nDC = nurbs.DuplicateCurve();
+                nDC = nDC.Trim(trim);
+                if (nDC.IsValid) cList.Add(nDC);
+                t0 = t;
+            }
+            while (true);
+
+            if (cList.Count == cListCount) cList.Add(nurbs);
+            return true;
         }
     }
 }

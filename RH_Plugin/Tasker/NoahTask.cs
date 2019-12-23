@@ -14,6 +14,7 @@ using Rhino.DocObjects;
 using Rhino.Geometry;
 using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Drawing;
 using System.IO;
 using System.Linq;
@@ -51,6 +52,7 @@ namespace Noah.Tasker
         public event TaskDoneHandler DoneEvent;
         public event WarningHandler WarningEvent;
         public event InfoHandler StoreEvent;
+        public event DebugHandler DebugEvent;
 
         public NoahTask()
         {
@@ -123,16 +125,18 @@ namespace Noah.Tasker
 
         private void Doc_SolutionEnd(object sender, GH_SolutionEventArgs e)
         {
+            DebugEvent("SolutionEnd Event");
             try
             {
-                StoreOutput();
-                if (RunningCnt == 0) Zoom();
-                ++RunningCnt;
+                StoreOutput();               
+                
             } catch(Exception ex)
             {
                 ErrorEvent(sender, ex.Message);
             } finally
             {
+                if (RunningCnt == 0) Zoom();
+                ++RunningCnt;
                 DoneEvent(this, ID.ToString(), IsTaskRestore);
                 IsTaskRestore = false;
             }
@@ -143,7 +147,9 @@ namespace Noah.Tasker
             var canvas = Instances.ActiveCanvas;
             if (canvas == null) return;
             if (!canvas.IsDocument) return;
-            List<IGH_DocumentObject> ghDocumentObjectList = canvas.Document.EnabledObjects();
+            // List<IGH_DocumentObject> ghDocumentObjectList = new List<IGH_DocumentObject>();
+            var ghDocumentObjectList = canvas.Document.EnabledObjects();
+            // TODO Only zoom not hidden object
             if (ghDocumentObjectList == null || ghDocumentObjectList.Count == 0)
                 return;
             BoundingBox bbox = BoundingBox.Empty;
@@ -388,6 +394,7 @@ namespace Noah.Tasker
 
         private void StoreOutput()
         {
+            DebugEvent("Start Store Output");
             GH_DocumentServer doc_server = Instances.DocumentServer;
 
             if (doc_server == null) throw new Exception("No Document Server exist!");
@@ -411,6 +418,8 @@ namespace Noah.Tasker
 
                 if (!paraMap.TryGetValue("Index", out string index)
                     || !paraMap.TryGetValue("Type", out string type)) continue;
+
+                DebugEvent($"Index: {index}; Type: {type}");
 
                 string fileName = Path.Combine(outDir, index + "@" + DateTime.Now.ToString("HH-mm-ss MM-dd"));
 
@@ -483,6 +492,88 @@ namespace Noah.Tasker
 
                             break;
                         }
+                    case "EPS":
+                        {
+                            List<string> outputFiles = new List<string>();
+
+                            foreach (var data in volatileData.AllData(true))
+                            {
+                                GeometryBase obj = GH_Convert.ToGeometryBase(data);
+                                if (obj == null)
+                                {
+                                    WarningEvent(this, data.TypeName + "不能转换成GeometryBase");
+                                    continue;
+                                }
+
+                                string layer = obj.GetUserString("PSLayer");
+                                if (layer == null)
+                                {
+                                    WarningEvent(this, "边框物件未指定PSLayer名称");
+                                    continue;
+                                }
+
+                                if (!Directory.Exists(fileName)) Directory.CreateDirectory(fileName);
+
+                                string savePath = Path.Combine(fileName, layer + ".eps");
+                                obj.GetBoundingBox(Plane.WorldXY, out Box objBox);
+                                var eps = new EncapsulatedPostScript(objBox, savePath);
+                                eps.SaveEPS(GetAllObjectInsideBound(objBox, AllVisableGeometryInGHDocmument()));
+                                outputFiles.Add(savePath);
+                            }
+
+                            content = JsonConvert.SerializeObject(outputFiles);
+                            break;
+                        }
+                    case "PDF":
+                        {
+                            SortedDictionary<int, List<GeometryBase>> geometries = new SortedDictionary<int, List<GeometryBase>>();
+
+                            GeometryBase boundObj = null;
+
+                            foreach (var data in volatileData.AllData(true))
+                            {
+                                if (data == null) continue;
+                                GeometryBase obj = GH_Convert.ToGeometryBase(data);
+                                if (obj == null)
+                                {
+                                    WarningEvent(this, data.TypeName + "不能转换成GeometryBase");
+                                    continue;
+                                }
+
+                                if (obj.GetUserString("PDF_BOUND") == "PDF_BOUND")
+                                {
+                                    boundObj = obj;
+                                    DebugEvent("PDF文档找到边界");
+                                    continue;
+                                }
+
+                                if (!int.TryParse(obj.GetUserString("PDF_PAGE"), out int page)) continue;
+
+                                if (!geometries.ContainsKey(page)) geometries.Add(page, new List<GeometryBase>());
+
+                                geometries[page].Add(obj);
+                            }
+
+                            fileName += ".pdf";
+
+                            if (geometries.Count == 0 || boundObj == null) break;
+
+                            boundObj.GetBoundingBox(Plane.WorldXY, out Box boundBox);
+
+                            try
+                            {
+                                var eps = new EncapsulatedPostScript(boundBox, fileName);
+
+                                eps.SavePDF(geometries);
+                            }
+                            catch (Exception ex)
+                            {
+                                ErrorEvent(this, ex.Message);
+                            }
+
+                            content = fileName;
+                            break;
+                        }
                     default:
                         break;
                 }
@@ -496,6 +587,71 @@ namespace Noah.Tasker
                     ["content"] = content
                 }.ToString());
             }
+        }
+
+        private List<GeometryBase> AllVisableGeometryInGHDocmument()
+        {           
+
+            GH_DocumentServer doc_server = Instances.DocumentServer;
+
+            if (doc_server == null) throw new Exception("No Document Server exist!");
+
+            GH_Document doc = doc_server.ToList().Find(x => x.Properties.ProjectFileName == ID.ToString());
+
+            if (doc == null) throw new Exception("Tasker 未找到GH_Document");
+
+            var list = new List<GeometryBase>();
+
+            foreach (IGH_DocumentObject obj in doc.Objects)
+            {
+                if (!(obj is IGH_PreviewObject prev) ||
+                    prev.Hidden ||
+                    !(obj is IGH_Component comp)) continue;
+
+                comp.Params.Output.ForEach((IGH_Param output) =>
+                {
+                    IGH_Structure data = output.VolatileData;
+                    if (!data.IsEmpty)
+                    {
+                        foreach (var dat in data.AllData(true))
+                        {
+                            GeometryBase geometry = GH_Convert.ToGeometryBase(dat);
+                            if (geometry == null) continue;
+                            list.Add(geometry);
+                        }
+                    }
+                });
+            }
+
+            return list;
+        }
+
+        private readonly ObjectType[] SupportObjectTypes =
+        {
+            ObjectType.Curve,
+            ObjectType.Brep,
+            ObjectType.Annotation
+        };
+
+        private List<GeometryBase> GetAllObjectInsideBound(Box bound, List<GeometryBase> objects)
+        {
+            List<GeometryBase> objs = new List<GeometryBase>();
+
+            foreach (var obj in objects)
+            {
+                obj.GetBoundingBox(Plane.WorldXY, out Box objBox);
+                if (!bound.Contains(objBox.Center) ||
+                  Equals(objBox, bound)) continue;
+
+                if (!SupportObjectTypes.Contains(obj.ObjectType)) continue;
+
+                if (!bound.X.IncludesInterval(objBox.X) ||
+                  !bound.Y.IncludesInterval(objBox.Y)) continue;
+
+                objs.Add(obj);
+            }
+
+            return objs;
         }
     }
 }

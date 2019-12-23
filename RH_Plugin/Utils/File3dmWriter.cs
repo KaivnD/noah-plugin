@@ -47,20 +47,15 @@ namespace Noah.Utils
             if (!name.Contains(Layer.PathSeparator)) return;
             string tmp = name.Replace(Layer.PathSeparator, "-");
             string[] arr = tmp.Split('-');
-
-            Guid parentID;
-
-            if (LayerMap.TryGetValue(arr[0], out parentID)) return;
+            if (LayerMap.TryGetValue(arr[0], out _)) return;
 
             CreateLayer(arr[0], Color.Black);
         }
 
         private Guid CreateLayer(string name, Color color)
         {
-            Guid id;
-
             // 从LayerMap中根据layerPath找到ID
-            if (LayerMap.TryGetValue(name, out id)) return id;
+            if (LayerMap.TryGetValue(name, out Guid id)) return id;
 
             id = Guid.NewGuid();
             LayerMap.Add(name, id);
@@ -79,10 +74,8 @@ namespace Noah.Utils
 
         private Guid CreateChildLayer(string path, Color color, Guid parent)
         {
-            Guid id;
-
             // 从LayerMap中根据layerPath找到ID
-            if (LayerMap.TryGetValue(path, out id)) return id;
+            if (LayerMap.TryGetValue(path, out Guid id)) return id;
 
             id = Guid.NewGuid();
             LayerMap.Add(path, id);
@@ -105,13 +98,11 @@ namespace Noah.Utils
 
         public int GetLayer(string layerPath, Color color)
         {
-            Guid id;
-
             // 先根据图层路径执行子图层解决方案
             ChildLayerSolution(layerPath);
 
             // 从LayerMap中根据layerPath找到ID
-            if (!LayerMap.TryGetValue(layerPath, out id))
+            if (!LayerMap.TryGetValue(layerPath, out Guid id))
             {
                 // 不存在，需要分情况创建
                 if (layerPath.Contains(Layer.PathSeparator))
@@ -120,9 +111,7 @@ namespace Noah.Utils
                     string tmp = layerPath.Replace(Layer.PathSeparator, "-");
                     string[] arr = tmp.Split('-');
 
-                    Guid parentID;
-
-                    if (!LayerMap.TryGetValue(arr[0], out parentID))
+                    if (!LayerMap.TryGetValue(arr[0], out Guid parentID))
                     {
                         return 0;// 这个情况应该不会出现
                     }

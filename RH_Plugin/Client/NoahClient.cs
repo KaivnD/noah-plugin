@@ -283,6 +283,7 @@ namespace Noah.CLient
             InfoEvent(this, taskInstanceName + " 已加载");
 
             task.ErrorEvent += (sd, msg) => ErrorEvent(sd, msg);
+            task.DebugEvent += msg => DebugEvent(msg);
 
             task.DoneEvent += (sd, id, isRestore) =>
             {

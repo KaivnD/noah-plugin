@@ -500,6 +500,10 @@ namespace Noah.Tasker
                             content = res[0];
                             break;
                         }
+                    case "DXF":
+                        {
+                            break;
+                        }
                     default:
                         break;
                 }

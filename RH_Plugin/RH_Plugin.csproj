@@ -56,6 +56,9 @@
     <Reference Include="Grasshopper, Version=6.6.18177.16150, Culture=neutral, PublicKeyToken=dda4f5ec2cd80803, processorArchitecture=MSIL">
       <HintPath>..\packages\Grasshopper.6.6.18177.16151\lib\net45\Grasshopper.dll</HintPath>
     </Reference>
+    <Reference Include="netDxf, Version=2.2.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\netDXF.2.2.0.1\lib\net45\netDxf.dll</HintPath>
+    </Reference>
     <Reference Include="Newtonsoft.Json, Version=12.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <HintPath>..\packages\Newtonsoft.Json.12.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
@@ -78,9 +81,11 @@
   <ItemGroup>
     <Compile Include="Client\Picker.cs" />
     <Compile Include="Commands\CookNow.cs" />
+    <Compile Include="Commands\HUDToogle.cs" />
     <Compile Include="Commands\ToEps.cs" />
     <Compile Include="Commands\Load3dm.cs" />
     <Compile Include="Commands\ZoomNow.cs" />
+    <Compile Include="UI\HUD.cs" />
     <Compile Include="Noah.cs" />
     <Compile Include="Client\NoahClient.cs" />
     <Compile Include="Commands\NoahServer.cs" />

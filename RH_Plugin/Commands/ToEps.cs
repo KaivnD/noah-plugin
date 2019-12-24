@@ -64,9 +64,10 @@ namespace Noah.Commands
 
                         boundCrv.GetBoundingBox(Plane.WorldXY, out Box bound);
 
-                        string page = boundCrv.GetUserString("PAGE_NAME");
+                        string page = obj.Object().Name;
 
                         if (string.IsNullOrWhiteSpace(page)) continue;
+                        
 
                         page = System.IO.Path.Combine(dialog.Directory, page + ".eps");
                         outputFiles.Add(page);
@@ -78,6 +79,8 @@ namespace Noah.Commands
 
                         eps.SaveEPS(objs, page);
                     }
+
+                    System.Diagnostics.Process.Start(dialog.Directory);
 
                 }
                 catch (Exception ex)
@@ -102,8 +105,6 @@ namespace Noah.Commands
                 obj.Geometry.GetBoundingBox(Plane.WorldXY, out Box objBox);
                 if (!bound.Contains(objBox.Center) ||
                     Equals(objBox, bound)) continue;
-
-                RhinoApp.WriteLine(obj.ObjectType.ToString());
 
                 if (!SupportObjectTypes.Contains(obj.ObjectType)) continue;
 

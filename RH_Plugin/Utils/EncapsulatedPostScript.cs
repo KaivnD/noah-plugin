@@ -148,7 +148,39 @@ namespace Noah.Utils
 
             if (crv.TryGetArc(out Arc arc))
             {
-                c.Arc(arc.Center.X, Height - arc.Center.Y, arc.Radius, arc.StartAngle, arc.EndAngle);
+                if(arc.IsCircle)
+                {
+                    c.Arc(arc.Center.X, Height - arc.Center.Y, arc.Radius, 0, 2 * Math.PI);
+                    return;
+                }
+                Point3d start = arc.StartPoint;
+                Point3d center = arc.Center;
+                double r = arc.Radius;
+                double a;
+                if (start.X == center.X)
+                {
+                    if (start.Y > center.Y)
+                    {
+                        a = Math.PI / 2;
+                    }
+                    else
+                    {
+                        a = (3 * Math.PI) / 2;
+                    }
+                }
+                else a = Math.Atan2(start.Y - center.Y, start.X - center.X);
+
+                double end = a + arc.EndAngle;
+
+                if (end > 2 * Math.PI)
+                {
+                    end -= 2 * Math.PI;
+                } else if (end > 4 * Math.PI)
+                {
+                    end -= 4 * Math.PI;
+                }
+
+                c.ArcNegative(arc.Center.X, Height - arc.Center.Y, arc.Radius, a, end);  
             }
             else if (crv.TryGetCircle(out Circle circle))
             {

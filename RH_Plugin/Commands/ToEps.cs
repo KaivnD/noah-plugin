@@ -34,28 +34,73 @@ namespace Noah.Commands
 
         protected override Result RunCommand(RhinoDoc doc, RunMode mode)
         {
-            GetObject go;
+            var dialog = new SelectFolderDialog()
+            {
+                Title = "保存位置"
+            };
 
-            go = new GetObject();
-            go.AcceptNothing(true);
-            go.AcceptEnterWhenDone(true);
-            go.SetCommandPrompt("请选择边界");
-            go.GeometryFilter = ObjectType.Curve;
+            DialogResult res = dialog.ShowDialog(Rhino.UI.RhinoEtoApp.MainWindow);
 
-            if (go.Get() != GetResult.Object) return Result.Failure;
+            if (res == DialogResult.Ok)
+            {
+                GetObject go;
 
-            Curve boundCrv = go.Object(0).Curve();
+                go = new GetObject();
+                go.AcceptNothing(true);
+                go.AcceptEnterWhenDone(true);
+                go.SetCommandPrompt("请选择边界");
+                go.GeometryFilter = ObjectType.Curve;
 
-            if (!boundCrv.IsPlanar() || !boundCrv.IsPolyline() || !boundCrv.IsClosed) return Result.Failure;
-            
-            boundCrv.GetBoundingBox(Plane.WorldXY, out Box bound);
+                if (go.GetMultiple(1, 0) != GetResult.Object) return Result.Failure;
 
+                try
+                {
+                    List<string> outputFiles = new List<string>();
+
+                    foreach (var obj in go.Objects())
+                    {
+                        Curve boundCrv = obj.Curve();
+                        if (!boundCrv.IsPlanar() || !boundCrv.IsPolyline() || !boundCrv.IsClosed) return Result.Failure;
+
+                        boundCrv.GetBoundingBox(Plane.WorldXY, out Box bound);
+
+                        string page = boundCrv.GetUserString("PAGE_NAME");
+
+                        if (string.IsNullOrWhiteSpace(page)) continue;
+
+                        page = System.IO.Path.Combine(dialog.Directory, page + ".eps");
+                        outputFiles.Add(page);
+
+                        var eps = new EncapsulatedPostScript(bound);
+
+                        var objs = SelectAllObjectsInBound(bound);
+                        if (objs.Count == 0) continue;
+
+                        eps.SaveEPS(objs, page);
+                    }
+
+                }
+                catch (Exception ex)
+                {
+                    RhinoApp.WriteLine(ex.Message);
+                } finally
+                {
+                    doc.Objects.UnselectAll();
+                    doc.Views.Redraw();
+                }
+            }
+
+            return Result.Success;
+        }
+
+        private List<GeometryBase> SelectAllObjectsInBound(Box bound)
+        {
             List<GeometryBase> objs = new List<GeometryBase>();
 
-            foreach (var obj in doc.Objects)
+            foreach (var obj in RhinoDoc.ActiveDoc.Objects)
             {
                 obj.Geometry.GetBoundingBox(Plane.WorldXY, out Box objBox);
-                if (!bound.Contains(objBox.Center) || 
+                if (!bound.Contains(objBox.Center) ||
                     Equals(objBox, bound)) continue;
 
                 RhinoApp.WriteLine(obj.ObjectType.ToString());
@@ -69,35 +114,7 @@ namespace Noah.Commands
                 obj.Select(true);
             }
 
-            if (objs.Count == 0) return Result.Cancel;
-
-            var dialog = new SaveFileDialog()
-            {
-                Title = "保存位置",
-                Filters = { new FileFilter("Encapsulated PostScript File", new string[] { "eps" }) }
-            };
-
-            DialogResult res = dialog.ShowDialog(Rhino.UI.RhinoEtoApp.MainWindow);
-            
-            if (res == DialogResult.Ok)
-            {
-                string savePath = dialog.FileName + "." + dialog.CurrentFilter.Extensions[0];
-
-                try
-                {
-                    var eps = new EncapsulatedPostScript(bound, savePath);
-                    eps.SaveEPS(objs);
-                    RhinoApp.WriteLine($"已写入{objs.Count}个物件至{savePath}");
-                } catch (Exception ex)
-                {
-                    RhinoApp.WriteLine(ex.Message);
-                }
-                
-                doc.Objects.UnselectAll();
-                doc.Views.Redraw();
-            }
-
-            return Result.Success;
+            return objs;
         }
 
         /// <summary>

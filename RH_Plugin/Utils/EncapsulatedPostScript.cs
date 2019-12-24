@@ -24,13 +24,21 @@ namespace Noah.Utils
             Height = Bound.Y.Max - Bound.Y.Min;
         }
 
-        public void SavePDF(SortedDictionary<int, List<GeometryBase>> geometries)
+        public EncapsulatedPostScript(Box box)
+        {
+            Bound = box;
+
+            Width = Bound.X.Max - Bound.X.Min;
+            Height = Bound.Y.Max - Bound.Y.Min;
+        }
+
+        public void SavePDF(SortedDictionary<string, List<GeometryBase>> geometries)
         {
             using (Surface surface = new PdfSurface(FilePath, Width, Height))
             using (var c = new Context(surface))
             {
                 DefaultContext(c, false);
-                foreach (KeyValuePair<int, List<GeometryBase>> page in geometries)
+                foreach (KeyValuePair<string, List<GeometryBase>> page in geometries)
                 {
                     Save(page.Value, c);
                     c.ShowPage();
@@ -39,14 +47,28 @@ namespace Noah.Utils
             }
         }
 
-        public void SaveEPS(List<GeometryBase> geometries)
-        {            
-            using (Surface surface = new PSSurface(FilePath, Width, Height))
+        public void SaveEPS(List<GeometryBase> geometries, string path)
+        {
+            using (Surface surface = new PSSurface(path, Width, Height))
             using (var c = new Context(surface))
             {
                 DefaultContext(c);
                 Save(geometries, c);
                 surface.Finish();
+            }
+        }
+
+        public void SaveEPS(SortedDictionary<string, List<GeometryBase>> geometries)
+        {
+            foreach (KeyValuePair<string, List<GeometryBase>> page in geometries)
+            {
+                using (Surface surface = new PSSurface(page.Key, Width, Height))
+                using (var c = new Context(surface))
+                {
+                    DefaultContext(c);
+                    Save(page.Value, c);
+                    surface.Finish();
+                }
             }
         }
 

@@ -457,41 +457,30 @@ namespace Noah.Tasker
                         }
                     case "EPS":
                         {
-                            List<string> outputFiles = new List<string>();
+                            List<GeometryBase> objs = new List<GeometryBase>();                            
 
                             foreach (var data in volatileData.AllData(true))
                             {
+                                if (data == null) continue;
                                 GeometryBase obj = GH_Convert.ToGeometryBase(data);
                                 if (obj == null)
                                 {
                                     WarningEvent(this, data.TypeName + "不能转换成GeometryBase");
                                     continue;
                                 }
-
-                                string layer = obj.GetUserString("PSLayer");
-                                if (layer == null)
-                                {
-                                    WarningEvent(this, "边框物件未指定PSLayer名称");
-                                    continue;
-                                }
-
-                                if (!Directory.Exists(fileName)) Directory.CreateDirectory(fileName);
-
-                                string savePath = Path.Combine(fileName, layer + ".eps");
-                                obj.GetBoundingBox(Plane.WorldXY, out Box objBox);
-                                var eps = new EncapsulatedPostScript(objBox, savePath);
-                                eps.SaveEPS(GetAllObjectInsideBound(objBox, DocObjectBaker.AllVisableGeometryInGHDocmument()));
-                                outputFiles.Add(savePath);
+                                objs.Add(obj);
                             }
 
-                            content = JsonConvert.SerializeObject(outputFiles);
+                            if (!Directory.Exists(fileName)) Directory.CreateDirectory(fileName);
+
+                            content = JsonConvert.SerializeObject(SaveAdobeDocument(fileName, objs, AdobeDocType.EPS));
                             break;
                         }
                     case "PDF":
                         {
-                            SortedDictionary<int, List<GeometryBase>> geometries = new SortedDictionary<int, List<GeometryBase>>();
+                            List<GeometryBase> objs = new List<GeometryBase>();
 
-                            GeometryBase boundObj = null;
+                            fileName += ".pdf";
 
                             foreach (var data in volatileData.AllData(true))
                             {
@@ -503,38 +492,12 @@ namespace Noah.Tasker
                                     continue;
                                 }
 
-                                if (obj.GetUserString("PDF_BOUND") == "PDF_BOUND")
-                                {
-                                    boundObj = obj;
-                                    DebugEvent("PDF文档找到边界");
-                                    continue;
-                                }
-
-                                if (!int.TryParse(obj.GetUserString("PDF_PAGE"), out int page)) continue;
-
-                                if (!geometries.ContainsKey(page)) geometries.Add(page, new List<GeometryBase>());
-
-                                geometries[page].Add(obj);
+                                objs.Add(obj);
                             }
 
-                            fileName += ".pdf";
-
-                            if (geometries.Count == 0 || boundObj == null) break;
-
-                            boundObj.GetBoundingBox(Plane.WorldXY, out Box boundBox);
-
-                            try
-                            {
-                                var eps = new EncapsulatedPostScript(boundBox, fileName);
-
-                                eps.SavePDF(geometries);
-                            }
-                            catch (Exception ex)
-                            {
-                                ErrorEvent(this, ex.Message);
-                            }
-
-                            content = fileName;
+                            var res = SaveAdobeDocument(fileName, objs, AdobeDocType.PDF);
+                            if (res == null || res.Count == 0) break;
+                            content = res[0];
                             break;
                         }
                     default:
@@ -552,32 +515,66 @@ namespace Noah.Tasker
             }
         }
 
-        private readonly ObjectType[] SupportObjectTypes =
+        private enum AdobeDocType
         {
-            ObjectType.Curve,
-            ObjectType.Brep,
-            ObjectType.Annotation
-        };
+            PDF,
+            EPS
+        }
 
-        private List<GeometryBase> GetAllObjectInsideBound(Box bound, List<GeometryBase> objects)
+        private List<string> SaveAdobeDocument(string savePath, List<GeometryBase> objs, AdobeDocType type)
         {
-            List<GeometryBase> objs = new List<GeometryBase>();
+            SortedDictionary<string, List<GeometryBase>> geometries = new SortedDictionary<string, List<GeometryBase>>();
+            GeometryBase boundObj = null;
 
-            foreach (var obj in objects)
+            List<string> outputFiles = new List<string>();
+            
+            DebugEvent($"{type}_BOUND");
+
+            foreach (var obj in objs)
             {
-                obj.GetBoundingBox(Plane.WorldXY, out Box objBox);
-                if (!bound.Contains(objBox.Center) ||
-                  Equals(objBox, bound)) continue;
+                if (obj.GetUserString($"{type}_BOUND") == $"{type}_BOUND")
+                {
+                    boundObj = obj;
+                    DebugEvent($"{type}文档找到边界");
+                    continue;
+                }
 
-                if (!SupportObjectTypes.Contains(obj.ObjectType)) continue;
+                string page = obj.GetUserString($"{type}_PAGE");
 
-                if (!bound.X.IncludesInterval(objBox.X) ||
-                  !bound.Y.IncludesInterval(objBox.Y)) continue;
+                if (type == AdobeDocType.EPS && Directory.Exists(savePath))
+                {
+                    page = Path.Combine(savePath, page + ".eps");
+                    outputFiles.Add(page);
+                }
 
-                objs.Add(obj);
+                if (!geometries.ContainsKey(page)) geometries.Add(page, new List<GeometryBase>());
+
+                geometries[page].Add(obj);
             }
 
-            return objs;
+            if (geometries.Count == 0 || boundObj == null) return null;
+
+            boundObj.GetBoundingBox(Plane.WorldXY, out Box boundBox);
+
+            try
+            {
+                var eps = new EncapsulatedPostScript(boundBox, savePath);
+
+                if (type == AdobeDocType.PDF)
+                {
+                    eps.SavePDF(geometries);
+                    outputFiles.Add(savePath);
+                } else if (type == AdobeDocType.EPS)
+                {
+                    eps.SaveEPS(geometries);
+                }                
+            }
+            catch (Exception ex)
+            {
+                ErrorEvent(this, ex.Message);
+            }
+
+            return outputFiles;
         }
     }
 }

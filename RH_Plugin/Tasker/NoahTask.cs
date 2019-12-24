@@ -147,9 +147,7 @@ namespace Noah.Tasker
             var canvas = Instances.ActiveCanvas;
             if (canvas == null) return;
             if (!canvas.IsDocument) return;
-            // List<IGH_DocumentObject> ghDocumentObjectList = new List<IGH_DocumentObject>();
             var ghDocumentObjectList = canvas.Document.EnabledObjects();
-            // TODO Only zoom not hidden object
             if (ghDocumentObjectList == null || ghDocumentObjectList.Count == 0)
                 return;
             BoundingBox bbox = BoundingBox.Empty;
@@ -160,6 +158,7 @@ namespace Noah.Tasker
                 {
                     if (enumerator1.Current is IGH_PreviewObject current)
                     {
+                        if (current.Hidden) continue;
                         BoundingBox clippingBox = current.ClippingBox;
                         if (clippingBox.IsValid)
                             bbox.Union(clippingBox);

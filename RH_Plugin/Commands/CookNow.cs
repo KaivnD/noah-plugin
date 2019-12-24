@@ -33,7 +33,6 @@ namespace Noah.Commands
 
         protected override Result RunCommand(RhinoDoc doc, RunMode mode)
         {
-            // TODO: complete BakeCurrent command.
             var canvas = Instances.ActiveCanvas;
 
             if (canvas == null)

@@ -135,46 +135,10 @@ namespace Noah.Tasker
                 ErrorEvent(sender, ex.Message);
             } finally
             {
-                if (RunningCnt == 0) Zoom();
+                if (RunningCnt == 0) Commands.ZoomNow.Zoom();
                 ++RunningCnt;
                 DoneEvent(this, ID.ToString(), IsTaskRestore);
                 IsTaskRestore = false;
-            }
-        }
-
-        private void Zoom()
-        {
-            var canvas = Instances.ActiveCanvas;
-            if (canvas == null) return;
-            if (!canvas.IsDocument) return;
-            var ghDocumentObjectList = canvas.Document.EnabledObjects();
-            if (ghDocumentObjectList == null || ghDocumentObjectList.Count == 0)
-                return;
-            BoundingBox bbox = BoundingBox.Empty;
-            List<IGH_DocumentObject>.Enumerator enumerator1 = ghDocumentObjectList.GetEnumerator();
-            try
-            {
-                while (enumerator1.MoveNext())
-                {
-                    if (enumerator1.Current is IGH_PreviewObject current)
-                    {
-                        if (current.Hidden) continue;
-                        BoundingBox clippingBox = current.ClippingBox;
-                        if (clippingBox.IsValid)
-                            bbox.Union(clippingBox);
-                    }
-                }
-            }
-            finally
-            {
-                enumerator1.Dispose();
-            }
-            if (!bbox.IsValid)
-                return;
-
-            foreach(RhinoView view in RhinoDoc.ActiveDoc.Views)
-            {
-                view.ActiveViewport.ZoomBoundingBox(bbox);
             }
         }
 

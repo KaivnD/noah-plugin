@@ -80,6 +80,7 @@
     <Compile Include="Commands\CookNow.cs" />
     <Compile Include="Commands\ToEps.cs" />
     <Compile Include="Commands\Load3dm.cs" />
+    <Compile Include="Commands\ZoomNow.cs" />
     <Compile Include="Noah.cs" />
     <Compile Include="Client\NoahClient.cs" />
     <Compile Include="Commands\NoahServer.cs" />

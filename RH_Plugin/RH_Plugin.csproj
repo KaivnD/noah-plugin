@@ -77,7 +77,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Client\Picker.cs" />
-    <Compile Include="Commands\BakeCurrent.cs" />
+    <Compile Include="Commands\CookNow.cs" />
     <Compile Include="Commands\ToEps.cs" />
     <Compile Include="Commands\Load3dm.cs" />
     <Compile Include="Noah.cs" />

@@ -1,4 +1,7 @@
-﻿using Rhino;
+﻿using Grasshopper;
+using Grasshopper.Kernel;
+using Grasshopper.Kernel.Data;
+using Rhino;
 using Rhino.DocObjects;
 using Rhino.Geometry;
 using System;
@@ -21,9 +24,9 @@ namespace Noah.Utils
         public Dictionary<ObjectAttributes, GeometryBase> ObjectMap { get; private set; }
         public RhinoDoc rhinoDoc { get; private set; }
 
-        public void Bake()
+        public static void Bake(Dictionary<ObjectAttributes, GeometryBase> valuePairs, RhinoDoc rhinoDoc)
         {
-            foreach (KeyValuePair<ObjectAttributes, GeometryBase> item in ObjectMap)
+            foreach (KeyValuePair<ObjectAttributes, GeometryBase> item in valuePairs)
             {
                 var obj = item.Value;
                 var attr = item.Key;
@@ -49,6 +52,59 @@ namespace Noah.Utils
                         break;
                 }
             }
+        }
+
+        public static void BakeCurrent(RhinoDoc doc)
+        {
+            Dictionary<ObjectAttributes, GeometryBase> objs = new Dictionary<ObjectAttributes, GeometryBase>();
+            AllVisableGeometryInGHDocmument().ForEach(obj =>
+            {
+                ObjectAttributes attr = new ObjectAttributes()
+                {
+
+                };
+                objs.Add(attr, obj);
+            });
+
+            Bake(objs, doc);
+        }
+
+        public static List<GeometryBase> AllVisableGeometryInGHDocmument()
+        {
+            var canvas = Instances.ActiveCanvas;
+
+            if (canvas == null) throw new Exception("No Document Server exist!");
+
+            if (!canvas.IsDocument) throw new Exception("No Document Server exist!");
+
+            GH_Document doc = canvas.Document;
+
+            if (doc == null) throw new Exception("Tasker 未找到GH_Document");
+
+            var list = new List<GeometryBase>();
+
+            foreach (IGH_DocumentObject obj in doc.Objects)
+            {
+                if (!(obj is IGH_PreviewObject prev) ||
+                    prev.Hidden ||
+                    !(obj is IGH_Component comp)) continue;
+
+                comp.Params.Output.ForEach((IGH_Param output) =>
+                {
+                    IGH_Structure data = output.VolatileData;
+                    if (!data.IsEmpty)
+                    {
+                        foreach (var dat in data.AllData(true))
+                        {
+                            GeometryBase geometry = GH_Convert.ToGeometryBase(dat);
+                            if (geometry == null) continue;
+                            list.Add(geometry);
+                        }
+                    }
+                });
+            }
+
+            return list;
         }
 
         internal int GetLayer(string layerPath, Color color)

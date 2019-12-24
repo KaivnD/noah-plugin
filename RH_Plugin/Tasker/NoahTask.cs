@@ -517,7 +517,7 @@ namespace Noah.Tasker
                                 string savePath = Path.Combine(fileName, layer + ".eps");
                                 obj.GetBoundingBox(Plane.WorldXY, out Box objBox);
                                 var eps = new EncapsulatedPostScript(objBox, savePath);
-                                eps.SaveEPS(GetAllObjectInsideBound(objBox, AllVisableGeometryInGHDocmument()));
+                                eps.SaveEPS(GetAllObjectInsideBound(objBox, DocObjectBaker.AllVisableGeometryInGHDocmument()));
                                 outputFiles.Add(savePath);
                             }
 
@@ -587,43 +587,6 @@ namespace Noah.Tasker
                     ["content"] = content
                 }.ToString());
             }
-        }
-
-        private List<GeometryBase> AllVisableGeometryInGHDocmument()
-        {           
-
-            GH_DocumentServer doc_server = Instances.DocumentServer;
-
-            if (doc_server == null) throw new Exception("No Document Server exist!");
-
-            GH_Document doc = doc_server.ToList().Find(x => x.Properties.ProjectFileName == ID.ToString());
-
-            if (doc == null) throw new Exception("Tasker 未找到GH_Document");
-
-            var list = new List<GeometryBase>();
-
-            foreach (IGH_DocumentObject obj in doc.Objects)
-            {
-                if (!(obj is IGH_PreviewObject prev) ||
-                    prev.Hidden ||
-                    !(obj is IGH_Component comp)) continue;
-
-                comp.Params.Output.ForEach((IGH_Param output) =>
-                {
-                    IGH_Structure data = output.VolatileData;
-                    if (!data.IsEmpty)
-                    {
-                        foreach (var dat in data.AllData(true))
-                        {
-                            GeometryBase geometry = GH_Convert.ToGeometryBase(dat);
-                            if (geometry == null) continue;
-                            list.Add(geometry);
-                        }
-                    }
-                });
-            }
-
-            return list;
         }
 
         private readonly ObjectType[] SupportObjectTypes =

@@ -14,6 +14,7 @@ using Surface = Cairo.Surface;
 using Eto.Forms;
 using Command = Rhino.Commands.Command;
 using Noah.Utils;
+using IOPath = System.IO.Path;
 
 namespace Noah.Commands
 {
@@ -34,6 +35,21 @@ namespace Noah.Commands
 
         protected override Result RunCommand(RhinoDoc doc, RunMode mode)
         {
+            GetObject go;
+
+            go = new GetObject();
+            go.AcceptNothing(true);
+            go.AcceptEnterWhenDone(true);
+            go.SetCommandPrompt("请选择边界");
+            go.GeometryFilter = ObjectType.Curve;
+
+            if (go.Get() != GetResult.Object) return Result.Failure;
+            Curve boundCrv = go.Object(0).Curve();
+
+            if (!boundCrv.IsPlanar() || !boundCrv.IsPolyline() || !boundCrv.IsClosed) return Result.Failure;
+
+            boundCrv.GetBoundingBox(Plane.WorldXY, out Box bound);
+
             var dialog = new SelectFolderDialog()
             {
                 Title = "保存位置"
@@ -43,41 +59,35 @@ namespace Noah.Commands
 
             if (res == DialogResult.Ok)
             {
-                GetObject go;
-
-                go = new GetObject();
-                go.AcceptNothing(true);
-                go.AcceptEnterWhenDone(true);
-                go.SetCommandPrompt("请选择边界");
-                go.GeometryFilter = ObjectType.Curve;
-
-                if (go.GetMultiple(1, 0) != GetResult.Object) return Result.Failure;
-
                 try
                 {
-                    List<string> outputFiles = new List<string>();
+                    Dictionary<string, string> pathMap = new Dictionary<string, string>();
 
-                    foreach (var obj in go.Objects())
+                    foreach (var layer in doc.Layers)
                     {
-                        Curve boundCrv = obj.Curve();
-                        if (!boundCrv.IsPlanar() || !boundCrv.IsPolyline() || !boundCrv.IsClosed) return Result.Failure;
-
-                        boundCrv.GetBoundingBox(Plane.WorldXY, out Box bound);
-
-                        string page = obj.Object().Name;
-
-                        if (string.IsNullOrWhiteSpace(page)) continue;
+                        var objects = doc.Objects.FindByLayer(layer);
+                        if (!layer.IsVisible || !layer.IsValid || objects.Length == 0) continue;                        
                         
+                        string name = layer.FullPath.Replace(Layer.PathSeparator, "$$");                       
 
-                        page = System.IO.Path.Combine(dialog.Directory, page + ".eps");
-                        outputFiles.Add(page);
+                        string realPath = IOPath.Combine(dialog.Directory, name + ".eps");
+                        string tmpPath = IOPath.Combine(IOPath.GetTempPath(), layer.Id.ToString());
 
                         var eps = new EncapsulatedPostScript(bound);
 
-                        var objs = SelectAllObjectsInBound(bound);
+                        var objs = SelectAllObjectsInBound(bound, objects);
                         if (objs.Count == 0) continue;
 
-                        eps.SaveEPS(objs, page);
+                        eps.SaveEPS(objs, tmpPath);
+
+                        pathMap.Add(tmpPath, realPath);
+                    }
+
+                    if (pathMap.Count == 0) return Result.Cancel;
+
+                    foreach(KeyValuePair<string, string> item in pathMap)
+                    {
+                        System.IO.File.Move(item.Key, item.Value);
                     }
 
                     System.Diagnostics.Process.Start(dialog.Directory);
@@ -96,16 +106,15 @@ namespace Noah.Commands
             return Result.Success;
         }
 
-        private List<GeometryBase> SelectAllObjectsInBound(Box bound)
+        private List<GeometryBase> SelectAllObjectsInBound(Box bound, RhinoObject[] objects)
         {
             List<GeometryBase> objs = new List<GeometryBase>();
 
-            foreach (var obj in RhinoDoc.ActiveDoc.Objects)
+            foreach (var obj in objects)
             {
                 obj.Geometry.GetBoundingBox(Plane.WorldXY, out Box objBox);
                 if (!bound.Contains(objBox.Center) ||
                     Equals(objBox, bound)) continue;
-
                 if (!SupportObjectTypes.Contains(obj.ObjectType)) continue;
 
                 if (!bound.X.IncludesInterval(objBox.X) ||

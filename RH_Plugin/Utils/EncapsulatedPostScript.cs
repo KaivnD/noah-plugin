@@ -146,48 +146,9 @@ namespace Noah.Utils
         {
             if (!crv.IsPlanar()) return;
 
-            if (crv.TryGetArc(out Arc arc))
-            {
-                if(arc.IsCircle)
-                {
-                    c.Arc(arc.Center.X, Height - arc.Center.Y, arc.Radius, 0, 2 * Math.PI);
-                    return;
-                }
-                Point3d start = arc.StartPoint;
-                Point3d center = arc.Center;
-                double r = arc.Radius;
-                double a;
-                if (start.X == center.X)
-                {
-                    if (start.Y > center.Y)
-                    {
-                        a = Math.PI / 2;
-                    }
-                    else
-                    {
-                        a = (3 * Math.PI) / 2;
-                    }
-                }
-                else a = Math.Atan2(start.Y - center.Y, start.X - center.X);
-
-                double end = a + arc.EndAngle;
-
-                if (end > 2 * Math.PI)
-                {
-                    end -= 2 * Math.PI;
-                } else if (end > 4 * Math.PI)
-                {
-                    end -= 4 * Math.PI;
-                }
-
-                c.ArcNegative(arc.Center.X, Height - arc.Center.Y, arc.Radius, a, end);  
-            }
-            else if (crv.TryGetCircle(out Circle circle))
+            if (crv.TryGetCircle(out Circle circle))
             {
                 c.Arc(circle.Center.X, Height - circle.Center.Y, circle.Radius, 0, 2 * Math.PI);
-            }
-            else if (crv.TryGetEllipse(out Ellipse ellipse))
-            {
             }
             else if (crv.TryGetPolyline(out Polyline pts))
             {
@@ -204,7 +165,8 @@ namespace Noah.Utils
                 DrawPolyline(c, polyline.ToPolyline());
             } else
             {
-
+                crv.DivideByCount(23, true, out Point3d[] plpts);
+                DrawPolyline(c, new Polyline(plpts));
             }
 
             if (mode == DrawCurveMode.Stroke) c.Stroke();

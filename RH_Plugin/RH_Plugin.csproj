@@ -80,6 +80,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Client\Picker.cs" />
+    <Compile Include="Commands\AutoFillGuide.cs" />
     <Compile Include="Commands\CookNow.cs" />
     <Compile Include="Commands\HUDToogle.cs" />
     <Compile Include="Commands\ToEps.cs" />

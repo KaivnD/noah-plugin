@@ -22,6 +22,27 @@ namespace Noah.Commands
             return Result.Success;
         }
 
+        public static void ZoomRhinoDoc(bool all = true)
+        {
+            BoundingBox bbox = BoundingBox.Empty;
+            foreach (var obj in RhinoDoc.ActiveDoc.Objects)
+            {
+                bbox.Union(obj.Geometry.GetBoundingBox(false));
+            }
+            if (!bbox.IsValid) return;
+
+            if (!all)
+            {
+                RhinoDoc.ActiveDoc.Views.ActiveView.ActiveViewport.ZoomBoundingBox(bbox);
+                return;
+            }
+
+            foreach (RhinoView view in RhinoDoc.ActiveDoc.Views)
+            {
+                view.ActiveViewport.ZoomBoundingBox(bbox);
+            }
+        }
+
         public static void Zoom()
         {
             var canvas = Instances.ActiveCanvas;

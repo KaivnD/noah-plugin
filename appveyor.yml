@@ -6,7 +6,7 @@ build:
   project: NoahPlugin.sln
   verbosity: minimal
 after_build:
-  - ps: Get-ChildItem RH_Plugin/bin -Recurse | Where-Object {$_.Extension -eq ".rhp" -or $_.Extension -eq ".dll" -and $_ -is [io.fileinfo]} | Compress-Archive -DestinationPath RH_Plugin/bin/NoahPlugin.zip;Expand-Archive -Path RH_Plugin/bin/NoahPlugin.zip -DestinationPath RH_Plugin/bin/NoahPlugin.rhp;Compress-Archive -Path RH_Plugin/bin/NoahPlugin.rhp -DestinationPath RH_Plugin/bin/NoahPlugin.mac.zip;Rename-Item -Path RH_Plugin/bin/NoahPlugin.zip -NewName NoahPlugin.rhi;Rename-Item -Path RH_Plugin/bin/NoahPlugin.mac.zip -NewName NoahPlugin.macrhi;
+  - ps: Get-ChildItem RH_Plugin/bin | Where-Object {$_.Extension -eq ".rhp" -or $_.Extension -eq ".dll" -or $_ -is [IO.DirectoryInfo]} | Compress-Archive -DestinationPath RH_Plugin/bin/NoahPlugin.zip;Expand-Archive -Path RH_Plugin/bin/NoahPlugin.zip -DestinationPath RH_Plugin/bin/NoahPlugin.rhp;Compress-Archive -Path RH_Plugin/bin/NoahPlugin.rhp -DestinationPath RH_Plugin/bin/NoahPlugin.mac.zip;Rename-Item -Path RH_Plugin/bin/NoahPlugin.zip -NewName NoahPlugin.rhi;Rename-Item -Path RH_Plugin/bin/NoahPlugin.mac.zip -NewName NoahPlugin.macrhi;
 artifacts:
   - path: RH_Plugin/bin/NoahPlugin.rhi
     name: NoahPlugin

@@ -7,7 +7,13 @@ const { IncomingWebhook } = require("@slack/webhook");
 const OSS_KEYID = process.env.OSS_ID;
 const OSS_KEYSECRET = process.env.OSS_SECRET;
 const SLACK_URL = process.env.SLACK_WEBHOOK;
-
+fs.readFile(process.env.GITHUB_EVENT_PATH, (err, data) => {
+  if (err) {
+    console.log(err);
+    return;
+  }
+  console.log(data);
+});
 (async () => {
   if (!OSS_KEYID || !OSS_KEYSECRET || !SLACK_URL) {
     console.log(`Can't run deploy.`);
@@ -55,7 +61,7 @@ const SLACK_URL = process.env.SLACK_WEBHOOK;
   } catch (err) {
     await webhook.send({
       channel: "noah-client",
-      text: `${PLATFORM} ${version} deploy faild！`
+      text: `Noah Plugin ${version} deploy faild！`
     });
 
     console.log(err);

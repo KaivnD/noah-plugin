@@ -46,7 +46,7 @@ namespace Noah
 
             if (HostUtils.RunningOnOSX)
             {
-                string cairo = Path.Combine(Path.GetDirectoryName(AssemblyDirectory), "runtimes", "win-x64", "native", "cairo.dll");
+                string cairo = Path.Combine("/Users/kaivnd/Projects", "cairo.dll");
                 Rhino.RhinoApp.WriteLine(cairo);
                 AssemblyResolver.AddSearchFile(cairo);
             }

@@ -42,13 +42,13 @@ namespace Noah
 
         protected override LoadReturnCode OnLoad(ref string errorMessage)
         {
-            string cairo = Path.Combine(AssemblyDirectory, "runtimes", "win-x64", "native", "cairo.dll");
-            Rhino.RhinoApp.WriteLine(cairo);
+            
+
             if (HostUtils.RunningOnOSX)
             {
-                Rhino.RhinoApp.WriteLine("RunningOnOSX");                
+                string cairo = Path.Combine(Path.GetDirectoryName(AssemblyDirectory), "runtimes", "win-x64", "native", "cairo.dll");
                 AssemblyResolver.AddSearchFile(cairo);
-            } else Rhino.RhinoApp.WriteLine("NotRunningOnOSX");
+            }
 
             Rhino.UI.Panels.RegisterPanel(this, typeof(HistoryPanel), "Noah 时光机", null);
             Rhino.UI.Panels.RegisterPanel(this, typeof(LoggerPanel), "Noah 记录本", null);

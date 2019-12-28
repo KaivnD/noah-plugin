@@ -12,7 +12,7 @@ fs.readFile(process.env.GITHUB_EVENT_PATH, (err, data) => {
     console.log(err);
     return;
   }
-  console.log(data);
+  console.log(data.toString());
 });
 (async () => {
   if (!OSS_KEYID || !OSS_KEYSECRET || !SLACK_URL) {

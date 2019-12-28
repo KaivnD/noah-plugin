@@ -21,8 +21,10 @@ jobs:
       - name: MSBuild
         run: msbuild "RH_Plugin\RH_Plugin.csproj"
       - name: Deploy
-        run: yarn && yarn deploy
+        run: |
+          yarn
+          yarn deploy
         env:
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
-          OSS_KEYID: ${{ secrets.OSS_ID }}
-          OSS_KEYSECRET: ${{ secrets.OSS_SECRET }}
+          OSS_ID: ${{ secrets.OSS_ID }}
+          OSS_SECRET: ${{ secrets.OSS_SECRET }}

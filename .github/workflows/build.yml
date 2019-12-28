@@ -8,22 +8,18 @@ jobs:
 
     steps:
       - uses: actions/checkout@v1
+      - name: Use Node.js 10.x
+        uses: actions/setup-node@v1
+        with:
+          node-version: 10.x
       - name: Set up Nuget
         uses: warrenbuckley/Setup-Nuget@v1
       - name: Setup MSBuild.exe
         uses: warrenbuckley/Setup-MSBuild@v1
-      - name: Setup Ossutil
-        uses: manyuanrong/setup-ossutil@v1.0
-        with:
-          endpoint: "oss-accelerate"
-          access-key-id: ${{ secrets.OSS_ID }}
-          access-key-secret: ${{ secrets.OSS_SECRET }}
       - name: Restore Nuget package
         run: nuget restore
       - name: MSBuild
         run: msbuild "RH_Plugin\RH_Plugin.csproj"
       - name: Pack all
         run: powershell -c "Get-ChildItem RH_Plugin/bin | Where-Object {$_.Extension -eq ".rhp" -or $_.Extension -eq ".dll" -or $_ -is [IO.DirectoryInfo]} | Compress-Archive -DestinationPath RH_Plugin/bin/NoahPlugin.zip;Expand-Archive -Path RH_Plugin/bin/NoahPlugin.zip -DestinationPath RH_Plugin/bin/NoahPlugin;New-Item RH_Plugin/bin/NoahPlugin/NoahPlugin.rhp -ItemType "directory";Get-ChildItem RH_Plugin/bin/NoahPlugin | Where-Object { $_ -is [IO.FileInfo] } | Move-Item -Destination RH_Plugin/bin/NoahPlugin/NoahPlugin.rhp;Compress-Archive -Path RH_Plugin/bin/NoahPlugin -DestinationPath RH_Plugin/bin/NoahPlugin.mac.zip;Rename-Item -Path RH_Plugin/bin/NoahPlugin.mac.zip -NewName NoahPlugin.macrhi;Rename-Item -Path RH_Plugin/bin/NoahPlugin.zip -NewName NoahPlugin.rhi;"
-      - name: Deploy
-        run: ossutil cp -f RH_Plugin/bin/NoahPlugin.rhi oss://Noah/Plugin/Rhino/NoahPlugin.rhi
 

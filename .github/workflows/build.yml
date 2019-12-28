@@ -15,6 +15,6 @@ jobs:
       run: nuget restore
     - name: MSBuild
       run: |
-        cd "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\MSBuild\Current\Bin\"
-           .\MSBuild.exe $Env:GITHUB_WORKSPACE\RH_Plugin\RH_Plugin.csproj
+        "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\MSBuild\Current\Bin\MSBuild.exe" $Env:GITHUB_WORKSPACE\RH_Plugin\RH_Plugin.csproj
+        powershell -c "Get-ChildItem RH_Plugin/bin | Where-Object {$_.Extension -eq ".rhp" -or $_.Extension -eq ".dll" -or $_ -is [IO.DirectoryInfo]} | Compress-Archive -DestinationPath RH_Plugin/bin/NoahPlugin.zip;Expand-Archive -Path RH_Plugin/bin/NoahPlugin.zip -DestinationPath RH_Plugin/bin/NoahPlugin;New-Item RH_Plugin/bin/NoahPlugin/NoahPlugin.rhp -ItemType "directory";Get-ChildItem RH_Plugin/bin/NoahPlugin | Where-Object { $_ -is [IO.FileInfo] } | Move-Item -Destination RH_Plugin/bin/NoahPlugin/NoahPlugin.rhp;Compress-Archive -Path RH_Plugin/bin/NoahPlugin -DestinationPath RH_Plugin/bin/NoahPlugin.mac.zip;Rename-Item -Path RH_Plugin/bin/NoahPlugin.mac.zip -NewName NoahPlugin.macrhi;Rename-Item -Path RH_Plugin/bin/NoahPlugin.zip -NewName NoahPlugin.rhi;"
       

@@ -1,0 +1,21 @@
+name: CI
+
+on: [push]
+
+jobs:
+  build:
+
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v1
+    - name: Set up Nuget
+      uses: warrenbuckley/Setup-Nuget@v1
+    - name: Setup VS
+      uses: richardo2016/Setup-MSBuild@releases/clangcl_x_2017/v1
+    - name: Restore Nuget package
+      run: nuget restore
+    - name: MSBuild
+      working-directory: RH_Plugin
+      run: msbuild RH_Plugin.csproj
+      

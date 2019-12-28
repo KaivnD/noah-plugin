@@ -11,8 +11,6 @@ jobs:
     - uses: actions/checkout@v1
     - name: Set up Nuget
       uses: warrenbuckley/Setup-Nuget@v1
-    - name: Setup VS
-      uses: richardo2016/Setup-MSBuild@releases/clangcl_x_2017/v1
     - name: Restore Nuget package
       run: nuget restore
     - name: MSBuild

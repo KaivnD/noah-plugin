@@ -1,5 +1,9 @@
-﻿using Noah.UI;
+﻿using System.IO;
+using Noah.UI;
 using Rhino.PlugIns;
+using Rhino.Runtime;
+using System.Reflection;
+using System;
 
 namespace Noah
 {
@@ -19,6 +23,17 @@ namespace Noah
             Instance = this;
         }
 
+        public static string AssemblyDirectory
+        {
+            get
+            {
+                string codeBase = Assembly.GetExecutingAssembly().CodeBase;
+                UriBuilder uri = new UriBuilder(codeBase);
+                string path = Uri.UnescapeDataString(uri.Path);
+                return Path.GetDirectoryName(path);
+            }
+        }
+
         ///<summary>Gets the only instance of the Noah plug-in.</summary>
         public static Noah Instance
         {
@@ -27,6 +42,11 @@ namespace Noah
 
         protected override LoadReturnCode OnLoad(ref string errorMessage)
         {
+            if (HostUtils.RunningOnOSX)
+            {
+                AssemblyResolver.AddSearchFile(Path.Combine(AssemblyDirectory, "runtimes", "win-x64", "native", "cairo.dll"));
+            }
+
             Rhino.UI.Panels.RegisterPanel(this, typeof(HistoryPanel), "Noah 时光机", null);
             Rhino.UI.Panels.RegisterPanel(this, typeof(LoggerPanel), "Noah 记录本", null);
             return LoadReturnCode.Success;

@@ -88,10 +88,17 @@ namespace Noah.Utils
                         DrawAnnotation(c, obj);
                         break;
                     case ObjectType.Brep:
+                        DrawBrep(c, obj as Brep);
+                        break;
                     case ObjectType.Hatch:
                     case ObjectType.InstanceReference:
+                        Rhino.RhinoApp.WriteLine("block refrerence");
+                        break;
                     case ObjectType.InstanceDefinition:
+                        Rhino.RhinoApp.WriteLine("block def");
+                        break;
                     default:
+                        Rhino.RhinoApp.WriteLine(obj.ObjectType.ToString());
                         break;
                 }
             }

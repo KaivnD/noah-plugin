@@ -175,4 +175,10 @@ powershell -c "Get-ChildItem . | Where-Object {$_.Extension -eq '.rhp' -or $_.Ex
   </Target>
   <Import Project="..\packages\RhinoCommon.6.6.18177.16151\build\net45\RhinoCommon.targets" Condition="Exists('..\packages\RhinoCommon.6.6.18177.16151\build\net45\RhinoCommon.targets')" />
   <Import Project="..\packages\Grasshopper.6.6.18177.16151\build\net45\Grasshopper.targets" Condition="Exists('..\packages\Grasshopper.6.6.18177.16151\build\net45\Grasshopper.targets')" />
+  <PropertyGroup>
+    <PostBuildEvent>Copy "$(TargetPath)" "$(TargetDir)noah.rhp"
+Erase "$(TargetPath)"
+powershell -c "Get-ChildItem . | Where-Object {$_.Extension -eq '.rhp' -or $_.Extension -eq '.dll' -or $_ -is [IO.DirectoryInfo]} | Compress-Archive -DestinationPath ./NoahPlugin.zip;Expand-Archive -Path ./NoahPlugin.zip -DestinationPath ./NoahPlugin;New-Item ./NoahPlugin/NoahPlugin.rhp -ItemType 'directory';Get-ChildItem ./NoahPlugin | Where-Object { $_ -is [IO.FileInfo] } | Move-Item -Destination ./NoahPlugin/NoahPlugin.rhp;Compress-Archive -Path ./NoahPlugin -DestinationPath ./NoahPlugin.mac.zip;Rename-Item -Path ./NoahPlugin.mac.zip -NewName NoahPlugin.macrhi;Rename-Item -Path ./NoahPlugin.zip -NewName NoahPlugin.rhi;"
+</PostBuildEvent>
+  </PropertyGroup>
 </Project>

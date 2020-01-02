@@ -1,6 +1,10 @@
 name: Build
 
-on: [create]
+on:
+  push:
+    # Sequence of patterns matched against refs/tags
+    tags:
+      - "v*" # Push events to matching v*, i.e. v1.0, v20.15.10
 
 jobs:
   build:
@@ -8,10 +12,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v1
-      - name: Use Node.js 10.x
-        uses: actions/setup-node@v1
-        with:
-          node-version: 10.x
       - name: Set up Nuget
         uses: warrenbuckley/Setup-Nuget@v1
       - name: Setup MSBuild.exe
@@ -21,10 +21,21 @@ jobs:
       - name: MSBuild
         run: msbuild "RH_Plugin\RH_Plugin.csproj"
       - name: Deploy
-        run: |
-          yarn
-          yarn deploy
+        uses: KaivnD/ali-oss-action@v1
+        with:
+          oss_id: ${{ secrets.OSS_ID }}
+          oss_secret: ${{ secrets.OSS_SECRET }}
+          bucket: "ncfz"
+          files: |
+            ./RH_Plugin/bin/NoahPlugin.rhi=>Noah/Plugin/NoahPlugin.rhi
+            ./RH_Plugin/bin/NoahPlugin.macrhi=>Noah/Plugin/NoahPlugin.macrhi
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
         env:
-          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
-          OSS_ID: ${{ secrets.OSS_ID }}
-          OSS_SECRET: ${{ secrets.OSS_SECRET }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: false
+          prerelease: false

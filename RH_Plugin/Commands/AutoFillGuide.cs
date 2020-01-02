@@ -29,6 +29,7 @@ namespace Noah.Commands
                     new FileFilter("AutoCAD Drawings", new string[] { "dwg" })
                 }
             };
+
             if (selectDwgDialog.ShowDialog(RhinoEtoApp.MainWindow) == DialogResult.Ok)
             {
                 var options = new FileReadOptions
@@ -41,11 +42,8 @@ namespace Noah.Commands
                 AllLayerOn();
             }
 
-            int[] baseLayer = GetMultiLayerDialog("选取建筑外轮廓所在图层");
-            Layer building = GetLayerDialog("选取建筑外轮廓所在图层");
-            if (building == null || baseLayer == null) return Result.Failure;
-
-            Array.ForEach(baseLayer, i => RhinoApp.WriteLine(i.ToString()));
+            Layer[] building = GetMultiLayerDialog("选取建筑外轮廓所在图层");
+            if (building == null) return Result.Failure;
 
             return Result.Success;
         }
@@ -63,14 +61,15 @@ namespace Noah.Commands
             return null;
         }
 
-        private int[] GetMultiLayerDialog(string title = "Select Layer")
+        private Layer[] GetMultiLayerDialog(string title = "Select Layer")
         {
+            Layer[] layers1 = null;
             if (Dialogs.ShowSelectMultipleLayersDialog(new int[] { }, title, false, out int[] layers))
             {
-                return layers;
+                layers1 = new Layer[layers.Length];
+                Array.ForEach(layers, i => layers1[i] = (RhinoDoc.ActiveDoc.Layers.FindIndex(i)));
             }
-
-            return null;
+            return layers1;
         }
 
         private void OneLayerOn(Layer layer)

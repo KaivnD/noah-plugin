@@ -88,6 +88,7 @@ namespace Noah.Commands
                     foreach(KeyValuePair<string, string> item in pathMap)
                     {
                         System.IO.File.Move(item.Key, item.Value);
+                        RhinoApp.WriteLine($"已写入, {item.Value}");
                     }
 
                     System.Diagnostics.Process.Start(dialog.Directory);

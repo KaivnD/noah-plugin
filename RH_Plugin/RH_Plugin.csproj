@@ -165,6 +165,11 @@ powershell -c "Get-ChildItem . | Where-Object {$_.Extension -eq '.rhp' -or $_.Ex
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
+  <Target Name="PostBuildMacros">
+    <GetAssemblyIdentity AssemblyFiles="$(TargetPath)">
+      <Output TaskParameter="Assemblies" ItemName="Targets" />
+    </GetAssemblyIdentity>
+  </Target>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>这台计算机上缺少此项目引用的 NuGet 程序包。使用“NuGet 程序包还原”可下载这些程序包。有关更多信息，请参见 http://go.microsoft.com/fwlink/?LinkID=322105。缺少的文件是 {0}。</ErrorText>
@@ -176,9 +181,12 @@ powershell -c "Get-ChildItem . | Where-Object {$_.Extension -eq '.rhp' -or $_.Ex
   <Import Project="..\packages\RhinoCommon.6.6.18177.16151\build\net45\RhinoCommon.targets" Condition="Exists('..\packages\RhinoCommon.6.6.18177.16151\build\net45\RhinoCommon.targets')" />
   <Import Project="..\packages\Grasshopper.6.6.18177.16151\build\net45\Grasshopper.targets" Condition="Exists('..\packages\Grasshopper.6.6.18177.16151\build\net45\Grasshopper.targets')" />
   <PropertyGroup>
-    <PostBuildEvent>Copy "$(TargetPath)" "$(TargetDir)noah.rhp"
+    <PostBuildEventDependsOn>
+      $(PostBuildEventDependsOn);
+      PostBuildMacros;
+    </PostBuildEventDependsOn>
+    <PostBuildEvent>Copy "$(TargetPath)" "$(TargetDir)NoahInRhino-@(Targets->'%(Version)').rhp"
 Erase "$(TargetPath)"
-powershell -c "Get-ChildItem . | Where-Object {$_.Extension -eq '.rhp' -or $_.Extension -eq '.dll' -or $_ -is [IO.DirectoryInfo]} | Compress-Archive -DestinationPath ./NoahPlugin.zip;Expand-Archive -Path ./NoahPlugin.zip -DestinationPath ./NoahPlugin;New-Item ./NoahPlugin/NoahPlugin.rhp -ItemType 'directory';Get-ChildItem ./NoahPlugin | Where-Object { $_ -is [IO.FileInfo] } | Move-Item -Destination ./NoahPlugin/NoahPlugin.rhp;Compress-Archive -Path ./NoahPlugin -DestinationPath ./NoahPlugin.mac.zip;Rename-Item -Path ./NoahPlugin.mac.zip -NewName NoahPlugin.macrhi;Rename-Item -Path ./NoahPlugin.zip -NewName NoahPlugin.rhi;"
-</PostBuildEvent>
+echo @(Targets->'%(Version)')</PostBuildEvent>
   </PropertyGroup>
 </Project>

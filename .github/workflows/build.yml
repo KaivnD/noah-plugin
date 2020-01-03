@@ -19,7 +19,7 @@ jobs:
       - name: Restore Nuget package
         run: nuget restore
       - name: MSBuild
-        run: msbuild "RH_Plugin\RH_Plugin.csproj"
+        run: msbuild ".\NoahPlugin.sln"
       - name: Deploy
         uses: KaivnD/ali-oss-action@c99a39a10779b648b8ba8ea48c52091ba1476328
         with:

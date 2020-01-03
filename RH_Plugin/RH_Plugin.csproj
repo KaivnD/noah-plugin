@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="..\packages\SharpCairo.1.15.12-alpha\build\net45\SharpCairo.props" Condition="Exists('..\packages\SharpCairo.1.15.12-alpha\build\net45\SharpCairo.props')" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -11,11 +11,12 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Noah</RootNamespace>
     <AssemblyName>noah</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <IsWebBootstrapper>false</IsWebBootstrapper>
     <NuGetPackageImportStamp>
     </NuGetPackageImportStamp>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
     <DebugSymbols>true</DebugSymbols>
@@ -62,6 +63,9 @@
     <Reference Include="Newtonsoft.Json, Version=12.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <HintPath>..\packages\Newtonsoft.Json.12.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
+    <Reference Include="RestSharp, Version=106.6.10.0, Culture=neutral, PublicKeyToken=598062e77f915f75, processorArchitecture=MSIL">
+      <HintPath>..\packages\RestSharp.106.6.10\lib\net452\RestSharp.dll</HintPath>
+    </Reference>
     <Reference Include="Rhino.UI, Version=6.6.18177.16150, Culture=neutral, PublicKeyToken=552281e97c755530, processorArchitecture=MSIL">
       <HintPath>..\packages\RhinoCommon.6.6.18177.16151\lib\net45\Rhino.UI.dll</HintPath>
     </Reference>
@@ -73,7 +77,12 @@
     <Reference Include="System.Data" />
     <Reference Include="System.Drawing" />
     <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Web" />
     <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml" />
+    <Reference Include="System.Xml.XmlDocument, Version=4.0.2.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Xml.XmlDocument.4.3.0\lib\net46\System.Xml.XmlDocument.dll</HintPath>
+    </Reference>
     <Reference Include="websocket-sharp, Version=1.0.4.0, Culture=neutral, PublicKeyToken=5660b08a1845a91e, processorArchitecture=MSIL">
       <HintPath>..\packages\WebSocketSharpFork.1.0.4.0\lib\net35\websocket-sharp.dll</HintPath>
     </Reference>
@@ -101,6 +110,7 @@
     <Compile Include="UI\HistoryStoreMemo.cs" />
     <Compile Include="UI\LoggerPanel.cs" />
     <Compile Include="UI\HistoryDetialWindow.cs" />
+    <Compile Include="Utils\AutoUpdater.cs" />
     <Compile Include="Utils\DocObjectBaker.cs" />
     <Compile Include="Utils\EncapsulatedPostScript.cs" />
     <Compile Include="Utils\EventHandler.cs" />
@@ -185,8 +195,9 @@ powershell -c "Get-ChildItem . | Where-Object {$_.Extension -eq '.rhp' -or $_.Ex
       $(PostBuildEventDependsOn);
       PostBuildMacros;
     </PostBuildEventDependsOn>
-    <PostBuildEvent>Copy "$(TargetPath)" "$(TargetDir)NoahInRhino-@(Targets->'%(Version)').rhp"
-Erase "$(TargetPath)"
-echo @(Targets->'%(Version)')</PostBuildEvent>
+    <PostBuildEvent>powershell.exe -executionpolicy bypass -file $(SolutionDir)\scripts\PackRelease.ps1 -targetDir $(TargetDir) -version @(Targets->'%(Version)') -targetDll $(TargetPath) -channel $(Configuration)</PostBuildEvent>
+  </PropertyGroup>
+  <PropertyGroup>
+    <PreBuildEvent>powershell.exe -command "Get-ChildItem $(TargetDir) | Where-Object {Remove-Item $_.FullName -Recurse -Force}"</PreBuildEvent>
   </PropertyGroup>
 </Project>

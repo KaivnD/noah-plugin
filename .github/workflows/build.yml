@@ -21,14 +21,16 @@ jobs:
       - name: MSBuild
         run: msbuild "RH_Plugin\RH_Plugin.csproj"
       - name: Deploy
-        uses: KaivnD/ali-oss-action@v1
+        uses: KaivnD/ali-oss-action@c99a39a10779b648b8ba8ea48c52091ba1476328
         with:
           oss_id: ${{ secrets.OSS_ID }}
           oss_secret: ${{ secrets.OSS_SECRET }}
           bucket: "ncfz"
           files: |
-            ./RH_Plugin/bin/NoahPlugin.rhi=>Noah/Plugin/NoahPlugin.rhi
-            ./RH_Plugin/bin/NoahPlugin.macrhi=>Noah/Plugin/NoahPlugin.macrhi
+            ./RH_Plugin/bin/*.rhi=>Noah/Plugin/*.rhi
+            ./RH_Plugin/bin/*.macrhi=>Noah/Plugin/*.macrhi
+          dirs: |
+            ./RH_Plugin/bin/channel=>Noah/Plugin/channel
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
@@ -39,13 +41,3 @@ jobs:
           release_name: Release ${{ github.ref }}
           draft: false
           prerelease: false
-      - name: Upload Release Asset
-        id: upload-release-asset
-        uses: KaivnD/upload-release-asset@v1.0.3
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps
-          files: |
-            ./RH_Plugin/bin/NoahPlugin.rhi
-            ./RH_Plugin/bin/NoahPlugin.macrhi

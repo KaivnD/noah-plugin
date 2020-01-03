@@ -4,6 +4,10 @@ using Rhino.PlugIns;
 using Rhino.Runtime;
 using System.Reflection;
 using System;
+using Eto.Forms;
+using Noah.Utils;
+using System.Threading.Tasks;
+using System.Diagnostics;
 
 namespace Noah
 {
@@ -16,7 +20,6 @@ namespace Noah
     /// "Show All Files" to see it in the "Solution Explorer" window).</para>
     ///</summary>
     public class Noah : Rhino.PlugIns.PlugIn
-
     {
         public Noah()
         {
@@ -40,20 +43,82 @@ namespace Noah
             get; private set;
         }
 
+        private AutoUpdater AutoUpdater;
+
         protected override LoadReturnCode OnLoad(ref string errorMessage)
         {
-            
+            string updateFeed = "https://ncfz.oss-cn-shanghai.aliyuncs.com/Noah/Plugin/Rhino/channel/";
+
+#if DEBUG
+            string updateChannel = "dev";
+#else
+            string updateChannel = "latest";
+#endif
 
             if (HostUtils.RunningOnOSX)
             {
+                updateFeed += $"{updateChannel}-mac.xml";
                 string cairo = Path.Combine("/Users/kaivnd/Projects", "cairo.dll");
                 Rhino.RhinoApp.WriteLine(cairo);
                 AssemblyResolver.AddSearchFile(cairo);
+            }
+            else if (HostUtils.RunningOnWindows)
+            {
+                updateFeed += $"{updateChannel}-win.xml";
+            }
+            else updateFeed = null;
+
+            if (updateFeed != null)
+            {
+                AutoUpdater = new AutoUpdater
+                {
+                    Feed = updateFeed,
+                    CurrentVersion = Assembly.GetName().Version.ToString()
+                };
+
+                AutoUpdater.OnUpdateAva += Updater_OnUpdateAva;
+                Rhino.RhinoApp.Closing += RhinoApp_Closing;
             }
 
             Rhino.UI.Panels.RegisterPanel(this, typeof(HistoryPanel), "Noah 时光机", null);
             Rhino.UI.Panels.RegisterPanel(this, typeof(LoggerPanel), "Noah 记录本", null);
             return LoadReturnCode.Success;
+        }
+
+        private void Updater_OnUpdateAva(object sender, EventArgs e)
+        {
+            var args = e as CheckUpdateEventArgs;
+            if (args == null) return;
+
+            if (args.Error != null)
+            {
+                MessageBox.Show(args.Error);
+                return;
+            }
+
+            if (string.IsNullOrEmpty(args.Version)) return;
+            var res = MessageBox.Show($"Noah-In-Rhino 新版本{args.Version} 更新可用是否更新 ?", MessageBoxButtons.YesNo, MessageBoxType.Question);
+            if (res == DialogResult.Yes)
+            {
+                string installer = AutoUpdater.DownloadUpdate();
+                if (installer == null)
+                {
+                    MessageBox.Show("更新失败！");
+                    return;
+                }
+                if (File.Exists(installer))
+                {
+                    Process.Start(installer);
+                    return;
+                }
+                MessageBox.Show(installer);
+            }
+        }
+
+        private void RhinoApp_Closing(object sender, EventArgs e)
+        {
+            if (AutoUpdater == null) return;
+            AutoUpdater.CheckForUpdate();
         }
     }
 }

@@ -85,11 +85,12 @@ WriteXML $channelWinXml $winPlugin $version
 WriteXML $channelMacXml $macPlugin $version
 
 function SetActionOutput($key, $val) {
-    return "::set-output name=" + $key + "::" + $val;
+    $output = "::set-output name=" + $key + "::" + $val;
+    Write-Host $output;
 }
 
 Write-Host;
-Write-Host SetActionOutput version $version;
-Write-Host SetActionOutput channel $channel;
-Write-Host SetActionOutput release $isRelease;
+SetActionOutput version $version;
+SetActionOutput channel $channel;
+SetActionOutput release $isRelease;
 Write-Host;

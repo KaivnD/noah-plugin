@@ -19,6 +19,7 @@ jobs:
       - name: Restore Nuget package
         run: nuget restore
       - name: MSBuild
+        id: msbuild
         run: msbuild ".\NoahPlugin.sln"
       - name: Deploy
         uses: KaivnD/ali-oss-action@c99a39a10779b648b8ba8ea48c52091ba1476328
@@ -37,7 +38,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
         with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
+          tag_name: ${{ steps.msbuild.outputs.version }}
+          release_name: Release ${{ steps.msbuild.outputs.version }}
           draft: false
           prerelease: false

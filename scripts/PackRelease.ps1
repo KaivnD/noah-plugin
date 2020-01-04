@@ -22,7 +22,6 @@ function GetHash ($filePath) {
     $hash = Get-FileHash -Algorithm MD5 $filePath;
     return $hash.Hash;
 }
-
 function WriteXML ($xmlFile, $sourceFile, $version) {
     $latest = Join-Path $targetDir $xmlFile;
     $hash = GetHash $sourceFile;
@@ -50,7 +49,7 @@ $macrhi = "NoahPlugin-" + $updateChannel + "-" + $version + ".macrhi";
 
 if (Test-Path $targetDll) { Rename-Item $targetDll -NewName noah.rhp }
 
-$version;
+Write-Output ::set-output name=version::$version;
 
 $targetZip = Join-Path $targetDir NoahPlugin.zip;
 $winPlugin = Join-Path $targetDir $winrhi;

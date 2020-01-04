@@ -40,4 +40,4 @@ jobs:
           tag_name: ${{ steps.msbuild.outputs.version }}
           release_name: ${{ steps.msbuild.outputs.channel }} ${{ steps.msbuild.outputs.version }}
           draft: false
-          prerelease: ${{ steps.msbuild.outputs.release }}
+          prerelease: ${{ steps.msbuild.outputs.prerelease }}

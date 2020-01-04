@@ -15,9 +15,9 @@ param (
 )
 
 $updateChannel = "latest"
-$isRelease = "true"
+$prerelease = "false"
 
-if ($channel -ne "Release") { $updateChannel = "dev"; $isRelease = "false" }
+if ($channel -ne "Release") { $updateChannel = "dev"; $prerelease = "true" }
 
 function GetHash ($filePath) {
     $hash = Get-FileHash -Algorithm MD5 $filePath;
@@ -92,5 +92,5 @@ function SetActionOutput($key, $val) {
 Write-Host;
 SetActionOutput version $version;
 SetActionOutput channel $channel;
-SetActionOutput release $isRelease;
+SetActionOutput prerelease $prerelease;
 Write-Host;

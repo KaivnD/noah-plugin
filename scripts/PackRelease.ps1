@@ -22,6 +22,7 @@ function GetHash ($filePath) {
     $hash = Get-FileHash -Algorithm MD5 $filePath;
     return $hash.Hash;
 }
+
 function WriteXML ($xmlFile, $sourceFile, $version) {
     $latest = Join-Path $targetDir $xmlFile;
     $hash = GetHash $sourceFile;
@@ -49,8 +50,6 @@ $macrhi = "NoahPlugin-" + $updateChannel + "-" + $version + ".macrhi";
 
 if (Test-Path $targetDll) { Rename-Item $targetDll -NewName noah.rhp }
 
-Write-Output ::set-output name=version::$version;
-
 $targetZip = Join-Path $targetDir NoahPlugin.zip;
 $winPlugin = Join-Path $targetDir $winrhi;
 $macPlugin = Join-Path $targetDir $macrhi;
@@ -61,7 +60,7 @@ if (Test-Path $winPlugin) { Remove-Item $winPlugin -Force }
 if (Test-Path $macPlugin) { Remove-Item $macPlugin -Force }
 if (Test-Path $tmpExpandDir) { Remove-Item $tmpExpandDir -Force -Recurse }
 
-Get-ChildItem $targetDir | Where-Object { $_.Extension -eq '.rhp' -or $_.Extension -eq '.dll' -or $_ -is [IO.DirectoryInfo] } | Compress-Archive -DestinationPath $targetZip;
+Get-ChildItem $targetDir | Where-Object { $_.Extension -eq '.rhp' -or $_.Extension -eq '.dll' -or $_ -is [IO.DirectoryInfo] } | Compress-Archive -DestinationPath $targetZip -CompressionLevel "NoCompression";
 Expand-Archive -Path $targetZip -DestinationPath $tmpExpandDir;
 
 $tmpRhpDir = Join-Path $tmpExpandDir NoahPlugin.rhp
@@ -71,7 +70,7 @@ New-Item $tmpRhpDir -ItemType 'directory';
 Get-ChildItem $tmpExpandDir | Where-Object { $_ -is [IO.FileInfo] } | Move-Item -Destination $tmpRhpDir;
 
 $macPluginZip = Join-Path $targetDir NoahPlugin.mac.zip
-Compress-Archive -Path $tmpExpandDir -DestinationPath $macPluginZip;
+Compress-Archive -Path $tmpExpandDir -DestinationPath $macPluginZip -CompressionLevel "NoCompression";
 
 Rename-Item -Path $macPluginZip -NewName $macPlugin;
 Rename-Item -Path $targetZip -NewName $winPlugin;
@@ -83,3 +82,9 @@ New-Item $channelDir -ItemType 'directory';
 
 WriteXML $channelWinXml $winPlugin $version
 WriteXML $channelMacXml $macPlugin $version
+
+$versionOutput = "::set-output name=version::" + $version;
+
+Write-Host;
+Write-Host $versionOutput;
+Write-Host;

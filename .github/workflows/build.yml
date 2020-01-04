@@ -22,7 +22,7 @@ jobs:
         id: msbuild
         run: msbuild ".\NoahPlugin.sln"
       - name: Deploy
-        uses: KaivnD/ali-oss-action@c7fd0c429db85219930901f602ff0ce9ea84a0a1
+        uses: KaivnD/ali-oss-action@c6d2ccbaa99e039ae4bbabe56e2bd8e471c030e6
         with:
           oss_id: ${{ secrets.OSS_ID }}
           oss_secret: ${{ secrets.OSS_SECRET }}
@@ -30,8 +30,7 @@ jobs:
           files: |
             ./RH_Plugin/bin/*.rhi=>Noah/Plugin/*.rhi
             ./RH_Plugin/bin/*.macrhi=>Noah/Plugin/*.macrhi
-          dirs: |
-            ./RH_Plugin/bin/channel=>Noah/Plugin/channel
+            ./RH_Plugin/bin/channel/*.xml=>Noah/Plugin/channel/*.xml
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
@@ -42,8 +41,3 @@ jobs:
           release_name: Release ${{ steps.msbuild.outputs.version }}
           draft: false
           prerelease: false
-      - name: Delete Comming tag
-        run: |
-          git push origin :${{ github.ref }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

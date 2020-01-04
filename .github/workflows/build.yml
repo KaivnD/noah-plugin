@@ -43,5 +43,6 @@ jobs:
           draft: false
           prerelease: false
       - name: Delete Comming tag
-        run: git tag -d ${{ github.ref }}
-        run: git push origin :refs/tags/${{ github.ref }}
+        run: |
+          git tag -d ${{ github.ref }}
+          git push origin :refs/tags/${{ github.ref }}

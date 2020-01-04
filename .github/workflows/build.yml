@@ -45,3 +45,5 @@ jobs:
       - name: Delete Comming tag
         run: |
           git push origin :${{ github.ref }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

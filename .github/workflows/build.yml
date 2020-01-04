@@ -28,9 +28,9 @@ jobs:
           oss_secret: ${{ secrets.OSS_SECRET }}
           bucket: "ncfz"
           files: |
-            ./RH_Plugin/bin/*.rhi=>Noah/Plugin/*.rhi
-            ./RH_Plugin/bin/*.macrhi=>Noah/Plugin/*.macrhi
-            ./RH_Plugin/bin/channel/*.xml=>Noah/Plugin/channel/*.xml
+            ./RH_Plugin/bin/*.rhi=>Noah/Plugin/Rhino/*.rhi
+            ./RH_Plugin/bin/*.macrhi=>Noah/Plugin/Rhino/*.macrhi
+            ./RH_Plugin/bin/channel/*.xml=>Noah/Plugin/Rhino/channel/*.xml
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
@@ -38,6 +38,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
         with:
           tag_name: ${{ steps.msbuild.outputs.version }}
-          release_name: Release ${{ steps.msbuild.outputs.version }}
+          release_name: ${{ steps.msbuild.outputs.channel }} ${{ steps.msbuild.outputs.version }}
           draft: false
-          prerelease: false
+          prerelease: ${{ steps.msbuild.outputs.release }}

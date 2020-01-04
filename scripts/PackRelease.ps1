@@ -14,9 +14,10 @@ param (
     $channel
 )
 
-$updateChannel = "latest";
+$updateChannel = "latest"
+$isRelease = "true"
 
-if ($channel -ne "Release") { $updateChannel = "dev"; }
+if ($channel -ne "Release") { $updateChannel = "dev"; $isRelease = "false" }
 
 function GetHash ($filePath) {
     $hash = Get-FileHash -Algorithm MD5 $filePath;
@@ -83,8 +84,12 @@ New-Item $channelDir -ItemType 'directory';
 WriteXML $channelWinXml $winPlugin $version
 WriteXML $channelMacXml $macPlugin $version
 
-$versionOutput = "::set-output name=version::" + $version;
+function SetActionOutput($key, $val) {
+    return "::set-output name=" + $key + "::" + $val;
+}
 
 Write-Host;
-Write-Host $versionOutput;
+Write-Host SetActionOutput version $version;
+Write-Host SetActionOutput channel $channel;
+Write-Host SetActionOutput release $isRelease;
 Write-Host;

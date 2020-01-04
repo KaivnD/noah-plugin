@@ -18,8 +18,6 @@ jobs:
         uses: warrenbuckley/Setup-MSBuild@v1
       - name: Restore Nuget package
         run: nuget restore
-      - name: Test File Hash
-        run: Get-FileHash -Algorithm MD5 NoahPlugin.sln
       - name: MSBuild
         id: msbuild
         run: msbuild ".\NoahPlugin.sln"

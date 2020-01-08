@@ -49,19 +49,22 @@ namespace Noah
         {
             string updateFeed = "https://ncfz.oss-cn-shanghai.aliyuncs.com/Noah/Plugin/Rhino/channel/";
 
-#if DEBUG
+        #if DEBUG
             string updateChannel = "dev";
-#else
+        #else
             string updateChannel = "latest";
-#endif
+        #endif
 
 
             if (HostUtils.RunningOnOSX)
             {
                 updateFeed += $"{updateChannel}-mac.xml";
-                string cairo = Path.Combine("/Users/kaivnd/Projects", "cairo.dll");
-                Rhino.RhinoApp.WriteLine(cairo);
-                AssemblyResolver.AddSearchFile(cairo);
+                string cairo = Path.Combine(AssemblyDirectory, "runtimes", "win-x64", "native", "cairo.dll");
+                if (!File.Exists(cairo))
+                {
+                    Rhino.RhinoApp.WriteLine(cairo);
+                } else AssemblyResolver.AddSearchFile(cairo);
+                
             }
             else if (HostUtils.RunningOnWindows)
             {

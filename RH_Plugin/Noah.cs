@@ -49,11 +49,11 @@ namespace Noah
         {
             string updateFeed = "https://ncfz.oss-cn-shanghai.aliyuncs.com/Noah/Plugin/Rhino/channel/";
 
-        #if DEBUG
-            string updateChannel = "dev";
-        #else
-            string updateChannel = "latest";
-        #endif
+            #if DEBUG
+                string updateChannel = "dev";
+            #else
+                string updateChannel = "latest";
+            #endif
 
 
             if (HostUtils.RunningOnOSX)

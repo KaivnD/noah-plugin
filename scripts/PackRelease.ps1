@@ -19,9 +19,14 @@ $prerelease = "false"
 
 if ($channel -ne "Release") { $updateChannel = "dev"; $prerelease = "true" }
 
+$scriptsDir = Split-Path -Parent $MyInvocation.MyCommand.Definition;
+$projectRoot = [System.IO.Path]::GetDirectoryName($scriptsDir);
+
+
 function GetHash ($filePath) {
-    $hash = Get-FileHash -Algorithm MD5 $filePath;
-    return $hash.Hash;
+    $hasher = Join-Path $projectRoot Hash\bin\Debug\hash.exe
+    $hash = & $hasher $filePath;
+    return $hash;
 }
 
 function WriteXML ($xmlFile, $sourceFile, $version) {

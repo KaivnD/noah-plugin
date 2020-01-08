@@ -55,6 +55,7 @@ namespace Noah
             string updateChannel = "latest";
 #endif
 
+
             if (HostUtils.RunningOnOSX)
             {
                 updateFeed += $"{updateChannel}-mac.xml";

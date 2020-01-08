@@ -19,7 +19,8 @@ param (
 
 $isCI = $ci -eq 'true';
 
-$isCI;
+if (Test-Path $targetDll) { Rename-Item $targetDll -NewName noah.rhp }
+if (!$isCI) { Return }
 
 $updateChannel = "latest"
 $prerelease = "false"
@@ -58,10 +59,8 @@ function WriteXML ($xmlFile, $sourceFile, $version) {
     $xml.Close();
 }
 
-$winrhi = "NoahPlugin-" + $updateChannel + "-" + $version + ".rhi";
-$macrhi = "NoahPlugin-" + $updateChannel + "-" + $version + ".macrhi";
-
-if (Test-Path $targetDll) { Rename-Item $targetDll -NewName noah.rhp }
+$winrhi = "NoahInRhino-" + $updateChannel + "-" + $version + ".rhi";
+$macrhi = "NoahInRhino-" + $updateChannel + "-" + $version + ".macrhi";
 
 $targetZip = Join-Path $targetDir NoahPlugin.zip;
 $winPlugin = Join-Path $targetDir $winrhi;

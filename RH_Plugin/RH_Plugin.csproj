@@ -23,7 +23,7 @@
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <OutputPath>bin\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DefineConstants>TRACE;DEBUG</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisIgnoreBuiltInRules>false</CodeAnalysisIgnoreBuiltInRules>
   </PropertyGroup>
@@ -195,7 +195,7 @@ powershell -c "Get-ChildItem . | Where-Object {$_.Extension -eq '.rhp' -or $_.Ex
       $(PostBuildEventDependsOn);
       PostBuildMacros;
     </PostBuildEventDependsOn>
-    <PostBuildEvent>powershell -ExecutionPolicy ByPass -file $(SolutionDir)\scripts\PackRelease.ps1 -targetDir $(TargetDir) -version @(Targets->'%(Version)') -targetDll $(TargetPath) -channel $(Configuration)</PostBuildEvent>
+    <PostBuildEvent>powershell -ExecutionPolicy ByPass -file $(SolutionDir)\scripts\PackRelease.ps1 -targetDir $(TargetDir) -version @(Targets->'%(Version)') -targetDll $(TargetPath) -channel $(Configuration) -ci "$(CI)"</PostBuildEvent>
   </PropertyGroup>
   <PropertyGroup>
     <PreBuildEvent>powershell -command "Get-ChildItem $(TargetDir) | Where-Object {Remove-Item $_.FullName -Recurse -Force}"</PreBuildEvent>

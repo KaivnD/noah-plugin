@@ -16,7 +16,7 @@ jobs:
         run: nuget restore
       - name: MSBuild
         id: msbuild
-        run: msbuild ".\NoahPlugin.sln"
+        run: msbuild /p:CI=true ".\NoahPlugin.sln"
       - name: Deploy
         uses: KaivnD/ali-oss-action@c6d2ccbaa99e039ae4bbabe56e2bd8e471c030e6
         with:

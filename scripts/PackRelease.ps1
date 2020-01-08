@@ -11,8 +11,15 @@ param (
     $targetDll,
     [Parameter()]
     [string]
-    $channel
+    $channel,
+    [Parameter(Mandatory = $false)]
+    [string]
+    $ci
 )
+
+$isCI = $ci -eq 'true';
+
+$isCI;
 
 $updateChannel = "latest"
 $prerelease = "false"

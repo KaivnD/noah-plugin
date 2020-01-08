@@ -91,8 +91,7 @@ namespace Noah
 
         private void Updater_OnUpdateAva(object sender, EventArgs e)
         {
-            var args = e as CheckUpdateEventArgs;
-            if (args == null) return;
+            if (!(e is CheckUpdateEventArgs args)) return;
 
             if (args.Error != null)
             {

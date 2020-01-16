@@ -43,7 +43,7 @@ namespace Noah
             get; private set;
         }
 
-        private AutoUpdater AutoUpdater;
+        private AutoUpdater AutoUpdater = null;
 
         protected override LoadReturnCode OnLoad(ref string errorMessage)
         {
@@ -72,6 +72,8 @@ namespace Noah
             }
             else updateFeed = null;
 
+            #if DEBUG
+            #else
             if (updateFeed != null)
             {
                 AutoUpdater = new AutoUpdater
@@ -83,6 +85,7 @@ namespace Noah
                 AutoUpdater.OnUpdateAva += Updater_OnUpdateAva;
                 Rhino.RhinoApp.Closing += RhinoApp_Closing;
             }
+            #endif
 
             Rhino.UI.Panels.RegisterPanel(this, typeof(HistoryPanel), "Noah 时光机", null);
             Rhino.UI.Panels.RegisterPanel(this, typeof(LoggerPanel), "Noah 记录本", null);

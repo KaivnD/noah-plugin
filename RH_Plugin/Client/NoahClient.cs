@@ -6,6 +6,7 @@ using Noah.Utils;
 using Eto.Forms;
 using Rhino;
 using Rhino.UI;
+using Rhino.Input.Custom;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -19,6 +20,7 @@ using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
 using Grasshopper.GUI.Canvas;
 using Grasshopper;
+using Rhino.Input;
 
 namespace Noah.CLient
 {
@@ -183,26 +185,66 @@ namespace Noah.CLient
                         {
                             RhinoApp.InvokeOnUiThread(new Action(() =>
                             {
-                                var crvs = Picker.PickCurves();
-                                if (crvs == null) return;
 
+                                GetOption go = null;
                                 var structrue = new GH_Structure<IGH_Goo>();
-                                crvs.ForEach(crv => structrue.Append(crv));
-
-                                try
+                                while (true)
                                 {
-                                    Client.Send(JsonConvert.SerializeObject(new JObject
+                                    go = new GetOption();
+
+                                    go.SetCommandPrompt("需要选择什么呢？");
+                                    go.AddOption(new LocalizeStringPair("Point", "点"));
+                                    go.AddOption(new LocalizeStringPair("Curve", "线"));
+                                    go.AddOption(new LocalizeStringPair("Surface", "面"));
+                                    go.AddOption(new LocalizeStringPair("Text", "文字"));                                   
+                                    
+
+                                    GetResult result = go.Get();
+                                    if (result != GetResult.Option) break;
+
+                                    string whereToGo = go.Option().EnglishName;
+
+                                    if (whereToGo == "Curve")
                                     {
-                                        ["route"] = "store-picker-data",
-                                        ["guid"] = eve.data,
-                                        ["bytes"] = IO.SerializeGrasshopperData(structrue)
-                                    }));
+                                        var res = Picker.PickCurves();
+                                        if (res == null) return;
 
+                                        res.ForEach(crv => structrue.Append(crv));
+                                        break;
+                                    } else if (whereToGo == "Point")
+                                    {
+                                        var res = Picker.PickPoint();
+                                        if (res == null) return;
+
+                                        res.ForEach(pt => structrue.Append(pt));
+                                        break;
+                                    } else if (whereToGo == "Surface")
+                                    {
+                                        var res = Picker.PickFace();
+                                        if (res == null) return;
+
+                                        res.ForEach(face => structrue.Append(face));
+                                        break;
+                                    }
+                                    else if (whereToGo == "Text")
+                                    {
+                                        var res = Picker.PickText();
+                                        if (res == null) return;
+
+                                        res.ForEach(text => structrue.Append(text));
+                                        break;
+                                    } else
+                                    {
+                                        break;
+                                    }
                                 }
-                                catch (Exception ex)
+
+                                Client.Send(JsonConvert.SerializeObject(new JObject
                                 {
-                                    ErrorEvent(this, ex.Message);
-                                }
+                                    ["route"] = "store-picker-data",
+                                    ["guid"] = eve.data,
+                                    ["bytes"] = IO.SerializeGrasshopperData(structrue)
+                                }));
 
                             }));
                             break;

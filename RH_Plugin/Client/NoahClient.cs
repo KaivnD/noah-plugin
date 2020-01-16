@@ -196,7 +196,7 @@ namespace Noah.CLient
                                     go.AddOption(new LocalizeStringPair("Point", "点"));
                                     go.AddOption(new LocalizeStringPair("Curve", "线"));
                                     go.AddOption(new LocalizeStringPair("Surface", "面"));
-                                    go.AddOption(new LocalizeStringPair("Text", "文字"));                                   
+                                    go.AddOption(new LocalizeStringPair("Guid", "ID"));                                   
                                     
 
                                     GetResult result = go.Get();
@@ -226,9 +226,9 @@ namespace Noah.CLient
                                         res.ForEach(face => structrue.Append(face));
                                         break;
                                     }
-                                    else if (whereToGo == "Text")
+                                    else if (whereToGo == "Guid")
                                     {
-                                        var res = Picker.PickText();
+                                        var res = Picker.PickGuid();
                                         if (res == null) return;
 
                                         res.ForEach(text => structrue.Append(text));

@@ -35,7 +35,7 @@ namespace Noah.Client
             }
         }
 
-        public static List<GH_Guid> PickText()
+        public static List<GH_Guid> PickGuid()
         {
             GetObject go;
             while (true)
@@ -44,7 +44,6 @@ namespace Noah.Client
                 go.AcceptNothing(true);
                 go.AcceptEnterWhenDone(true);
                 go.SetCommandPrompt("请选择一个或多个，之后回车确认");
-                go.GeometryFilter = ObjectType.Curve | ObjectType.EdgeFilter;
 
                 if (go.GetMultiple(1, 0) != GetResult.Object) return null;
 

@@ -126,14 +126,17 @@ namespace Noah.Tasker
         private void Doc_SolutionEnd(object sender, GH_SolutionEventArgs e)
         {
             DebugEvent("SolutionEnd Event");
+            
             try
             {
-                StoreOutput();               
-                
-            } catch(Exception ex)
+                StoreOutput();
+
+            }
+            catch (Exception ex)
             {
                 ErrorEvent(sender, ex.Message);
-            } finally
+            }
+            finally
             {
                 if (RunningCnt == 0) Commands.ZoomNow.Zoom();
                 ++RunningCnt;
@@ -228,7 +231,8 @@ namespace Noah.Tasker
                 if (data.type == "5")
                 {
                     m_data = IO.DeserializeGrasshopperData(Convert.FromBase64String((string)data.value));
-                } else
+                }
+                else
                 {
                     m_data = SingleDataStructrue(data.value);
                 }
@@ -396,61 +400,49 @@ namespace Noah.Tasker
                 {
                     case "CSV":
                         {
-                            try
+                            var allData = volatileData.AllData(true);
+                            List<string> sList = new List<string>();
+                            allData.ToList().ForEach(el =>
                             {
-                                var allData = volatileData.AllData(true);
-                                List<string> sList = new List<string>();
-                                allData.ToList().ForEach(el =>
-                                {
-                                    GH_Convert.ToString(el, out string tmp, GH_Conversion.Both);
-                                    sList.Add(tmp);
-                                });
+                                GH_Convert.ToString(el, out string tmp, GH_Conversion.Both);
+                                sList.Add(tmp);
+                            });
 
-                                string csv = string.Join(Environment.NewLine, sList);
+                            string csv = string.Join(Environment.NewLine, sList);
 
-                                fileName += ".csv";
-                                File.WriteAllText(fileName, csv, Encoding.UTF8);
-                                content = fileName;
-                            } catch
-                            {
-                                throw new Exception("写入CSV失败");
-                            }
+                            fileName += ".csv";
+                            File.WriteAllText(fileName, csv, Encoding.UTF8);
+                            content = fileName;
                             break;
                         }
                     case "3DM":
                         {
                             fileName += ".3dm";
-                            try
+
+                            File3dmWriter writer = new File3dmWriter(fileName);
+
+                            foreach (var data in volatileData.AllData(true))
                             {
-                                File3dmWriter writer = new File3dmWriter(fileName);
 
-                                foreach (var data in volatileData.AllData(true))
+                                if (!(data is GeometryBase))
                                 {
-
-                                    if (!(data is GeometryBase))
-                                    {
-                                        WarningEvent(this, data.TypeName + "不能转换成GeometryBase");
-                                        continue;
-                                    }
-
-                                    GeometryBase obj = GH_Convert.ToGeometryBase(data);
-
-                                    string layer = obj.GetUserString("Layer");
-                                    if (layer == null) continue;
-                                    ObjectAttributes att = new ObjectAttributes
-                                    {
-                                        LayerIndex = writer.GetLayer(layer, Color.Black)
-                                    };
-
-                                    writer.ObjectMap.Add(att, obj);
+                                    continue;
                                 }
 
-                                writer.Write();
-                                content = fileName;
-                            } catch
-                            {
-                                throw new Exception("写入3DM失败");
+                                GeometryBase obj = GH_Convert.ToGeometryBase(data);
+
+                                string layer = obj.GetUserString("Layer");
+                                if (layer == null) continue;
+                                ObjectAttributes att = new ObjectAttributes
+                                {
+                                    LayerIndex = writer.GetLayer(layer, Color.Black)
+                                };
+
+                                writer.ObjectMap.Add(att, obj);
                             }
+
+                            writer.Write();
+                            content = fileName;
                             break;
                         }
                     case "Data":
@@ -461,68 +453,57 @@ namespace Noah.Tasker
 
                                 content = IO.SerializeGrasshopperData(tree, hook.CustomName, volatileData.IsEmpty);
 
-                            } catch(Exception ex)
+                            }
+                            catch (Exception ex)
                             {
-                                throw ex;
+                                ErrorEvent(this, ex.Message);
                             }
 
                             break;
                         }
                     case "EPS":
                         {
-                            try
-                            {
-                                List<GeometryBase> objs = new List<GeometryBase>();
+                            List<GeometryBase> objs = new List<GeometryBase>();
 
-                                foreach (var data in volatileData.AllData(true))
+                            foreach (var data in volatileData.AllData(true))
+                            {
+                                if (data == null) continue;
+                                GeometryBase obj = GH_Convert.ToGeometryBase(data);
+                                if (obj == null)
                                 {
-                                    if (data == null) continue;
-                                    GeometryBase obj = GH_Convert.ToGeometryBase(data);
-                                    if (obj == null)
-                                    {
-                                        WarningEvent(this, data.TypeName + "不能转换成GeometryBase");
-                                        continue;
-                                    }
-                                    objs.Add(obj);
+                                    WarningEvent(this, data.TypeName + "不能转换成GeometryBase");
+                                    continue;
                                 }
-
-                                if (!Directory.Exists(fileName)) Directory.CreateDirectory(fileName);
-
-                                content = JsonConvert.SerializeObject(SaveAdobeDocument(fileName, objs, AdobeDocType.EPS));
-                            } catch
-                            {
-                                throw new Exception("写入EPS失败");
+                                objs.Add(obj);
                             }
+
+                            if (!Directory.Exists(fileName)) Directory.CreateDirectory(fileName);
+
+                            content = JsonConvert.SerializeObject(SaveAdobeDocument(fileName, objs, AdobeDocType.EPS));
                             break;
                         }
                     case "PDF":
                         {
-                            try
+                            List<GeometryBase> objs = new List<GeometryBase>();
+
+                            fileName += ".pdf";
+
+                            foreach (var data in volatileData.AllData(true))
                             {
-                                List<GeometryBase> objs = new List<GeometryBase>();
-
-                                fileName += ".pdf";
-
-                                foreach (var data in volatileData.AllData(true))
+                                if (data == null) continue;
+                                GeometryBase obj = GH_Convert.ToGeometryBase(data);
+                                if (obj == null)
                                 {
-                                    if (data == null) continue;
-                                    GeometryBase obj = GH_Convert.ToGeometryBase(data);
-                                    if (obj == null)
-                                    {
-                                        WarningEvent(this, data.TypeName + "不能转换成GeometryBase");
-                                        continue;
-                                    }
-
-                                    objs.Add(obj);
+                                    WarningEvent(this, data.TypeName + "不能转换成GeometryBase");
+                                    continue;
                                 }
 
-                                var res = SaveAdobeDocument(fileName, objs, AdobeDocType.PDF);
-                                if (res == null || res.Count == 0) break;
-                                content = res[0];
-                            } catch
-                            {
-                                throw new Exception("写入PDF失败");
+                                objs.Add(obj);
                             }
+
+                            var res = SaveAdobeDocument(fileName, objs, AdobeDocType.PDF);
+                            if (res == null || res.Count == 0) break;
+                            content = res[0];
                             break;
                         }
                     case "DXF":
@@ -556,7 +537,7 @@ namespace Noah.Tasker
             GeometryBase boundObj = null;
 
             List<string> outputFiles = new List<string>();
-            
+
             DebugEvent($"{type}_BOUND");
 
             foreach (var obj in objs)
@@ -593,10 +574,11 @@ namespace Noah.Tasker
                 {
                     eps.SavePDF(geometries);
                     outputFiles.Add(savePath);
-                } else if (type == AdobeDocType.EPS)
+                }
+                else if (type == AdobeDocType.EPS)
                 {
                     eps.SaveEPS(geometries);
-                }                
+                }
             }
             catch (Exception ex)
             {

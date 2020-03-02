@@ -424,12 +424,9 @@ namespace Noah.Tasker
                             foreach (var data in volatileData.AllData(true))
                             {
 
-                                if (!(data is GeometryBase))
-                                {
-                                    continue;
-                                }
-
                                 GeometryBase obj = GH_Convert.ToGeometryBase(data);
+
+                                if (obj == null) continue;
 
                                 string layer = obj.GetUserString("Layer");
                                 if (layer == null) continue;

@@ -195,9 +195,9 @@ powershell -c "Get-ChildItem . | Where-Object {$_.Extension -eq '.rhp' -or $_.Ex
       $(PostBuildEventDependsOn);
       PostBuildMacros;
     </PostBuildEventDependsOn>
-    <PostBuildEvent>powershell -ExecutionPolicy ByPass -file $(SolutionDir)\scripts\PackRelease.ps1 -targetDir $(TargetDir) -version @(Targets->'%(Version)') -targetDll $(TargetPath) -channel $(Configuration) -ci "$(CI)"</PostBuildEvent>
+    <PostBuildEvent>pwsh -ExecutionPolicy ByPass -file $(SolutionDir)\scripts\PackRelease.ps1 -targetDir $(TargetDir) -version @(Targets->'%(Version)') -targetDll $(TargetPath) -channel $(Configuration) -ci "$(CI)"</PostBuildEvent>
   </PropertyGroup>
   <PropertyGroup>
-    <PreBuildEvent>powershell -command "Get-ChildItem $(TargetDir) | Where-Object {Remove-Item $_.FullName -Recurse -Force}"</PreBuildEvent>
+    <PreBuildEvent>pwsh -command "Get-ChildItem $(TargetDir) | Where-Object {Remove-Item $_.FullName -Recurse -Force}"</PreBuildEvent>
   </PropertyGroup>
 </Project>

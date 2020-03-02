@@ -105,3 +105,10 @@ SetActionOutput version $version;
 SetActionOutput channel $channel;
 SetActionOutput prerelease $prerelease;
 Write-Host;
+
+
+Write-Host -----TEST-----
+
+Get-FileHash $macPluginZip
+
+Write-Host -----TEST-----

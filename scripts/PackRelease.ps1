@@ -109,6 +109,6 @@ Write-Host;
 
 Write-Host -----TEST-----
 
-Get-FileHash $macPluginZip
+Get-FileHash $macPlugin
 
 Write-Host -----TEST-----

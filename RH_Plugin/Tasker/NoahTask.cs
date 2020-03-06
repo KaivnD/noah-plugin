@@ -11,6 +11,7 @@ using Noah.Utils;
 using Rhino;
 using Rhino.Display;
 using Rhino.DocObjects;
+using Rhino.FileIO;
 using Rhino.Geometry;
 using System;
 using System.Collections.Generic;
@@ -126,7 +127,7 @@ namespace Noah.Tasker
         private void Doc_SolutionEnd(object sender, GH_SolutionEventArgs e)
         {
             DebugEvent("SolutionEnd Event");
-            
+
             try
             {
                 StoreOutput();
@@ -466,11 +467,8 @@ namespace Noah.Tasker
                             {
                                 if (data == null) continue;
                                 GeometryBase obj = GH_Convert.ToGeometryBase(data);
-                                if (obj == null)
-                                {
-                                    WarningEvent(this, data.TypeName + "不能转换成GeometryBase");
-                                    continue;
-                                }
+                                if (obj == null) continue;
+
                                 objs.Add(obj);
                             }
 
@@ -489,11 +487,7 @@ namespace Noah.Tasker
                             {
                                 if (data == null) continue;
                                 GeometryBase obj = GH_Convert.ToGeometryBase(data);
-                                if (obj == null)
-                                {
-                                    WarningEvent(this, data.TypeName + "不能转换成GeometryBase");
-                                    continue;
-                                }
+                                if (obj == null) continue;
 
                                 objs.Add(obj);
                             }
@@ -501,6 +495,28 @@ namespace Noah.Tasker
                             var res = SaveAdobeDocument(fileName, objs, AdobeDocType.PDF);
                             if (res == null || res.Count == 0) break;
                             content = res[0];
+                            break;
+                        }
+                    case "RhinoPDF":
+                        {
+                            var pdf = FilePdf.Create();
+
+                            fileName += ".pdf";
+
+                            foreach (object page in volatileData.AllData(true))
+                            {
+                                if (!(page is RhinoPageView view)) continue;
+
+                                ViewCaptureSettings settings = new ViewCaptureSettings(view, 300)
+                                {
+                                    OutputColor = ViewCaptureSettings.ColorMode.DisplayColor,
+                                    RasterMode = true
+                                };
+
+                                pdf.AddPage(settings);
+                            }
+
+                            pdf.Write(fileName);
                             break;
                         }
                     case "DXF":

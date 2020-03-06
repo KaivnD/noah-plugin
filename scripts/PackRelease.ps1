@@ -27,14 +27,9 @@ $prerelease = "false"
 
 if ($channel -ne "Release") { $updateChannel = "dev"; $prerelease = "true" }
 
-$scriptsDir = Split-Path -Parent $MyInvocation.MyCommand.Definition;
-$projectRoot = [System.IO.Path]::GetDirectoryName($scriptsDir);
-
-
 function GetHash ($filePath) {
-    $hasher = Join-Path $projectRoot Hash\bin\Debug\hash.exe
-    $hash = & $hasher $filePath;
-    return $hash;
+    $hash = Get-FileHash -Algorithm MD5 $filePath;
+    return $hash.Hash;
 }
 
 function WriteXML ($xmlFile, $sourceFile, $version) {
@@ -105,10 +100,3 @@ SetActionOutput version $version;
 SetActionOutput channel $channel;
 SetActionOutput prerelease $prerelease;
 Write-Host;
-
-
-Write-Host -----TEST-----
-
-Get-FileHash $macPlugin
-
-Write-Host -----TEST-----

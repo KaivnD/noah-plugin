@@ -51,7 +51,6 @@ namespace Noah.Tasker
 
         public event ErrorHandler ErrorEvent;
         public event TaskDoneHandler DoneEvent;
-        public event WarningHandler WarningEvent;
         public event InfoHandler StoreEvent;
         public event DebugHandler DebugEvent;
 
@@ -503,9 +502,18 @@ namespace Noah.Tasker
 
                             fileName += ".pdf";
 
-                            foreach (object page in volatileData.AllData(true))
+                            DebugEvent("RhinoPDF Begin");
+
+                            foreach (var page in volatileData.AllData(true))
                             {
-                                if (!(page is RhinoPageView view)) continue;
+                                DebugEvent("RhinoPDF got 1 page");
+                                if (!page.CastTo(out RhinoPageView view))
+                                {
+                                    DebugEvent(string.Format("{0} can not convert to RhinoPageView", page.GetType()));
+                                    continue;
+                                }
+
+                                DebugEvent("Data is converted to RhinoPage");
 
                                 ViewCaptureSettings settings = new ViewCaptureSettings(view, 300)
                                 {

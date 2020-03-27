@@ -525,6 +525,7 @@ namespace Noah.Tasker
                             }
 
                             pdf.Write(fileName);
+                            content = fileName;
                             break;
                         }
                     case "DXF":

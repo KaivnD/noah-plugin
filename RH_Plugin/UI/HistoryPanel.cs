@@ -112,6 +112,12 @@ namespace Noah.UI
                 tobedel = item;
             }
 
+            if (items.Count == 1)
+            {
+                MessageBox.Show("至少要留一个历史记录！");
+                return;
+            }
+
             if (tobedel != null) historyGroup.TaskRows.Items.Remove(tobedel);
             DeleteEvent(taskRow);
         }
